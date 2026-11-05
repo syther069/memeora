@@ -1,0 +1,45 @@
+{
+  "name": "memeora",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build --webpack",
+    "start": "next start",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@grpc/grpc-js": "^1.14.7",
+    "@mysten-incubation/memwal": "^0.1.12",
+    "@mysten/dapp-kit-core": "^1.6.42",
+    "@mysten/dapp-kit-react": "^2.1.44",
+    "@mysten/sui": "^2.38.0",
+    "@protobuf-ts/grpc-transport": "^2.11.1",
+    "clsx": "^2.1.1",
+    "framer-motion": "^14.7.1",
+    "lucide-react": "^1.60.0",
+    "next": "16.4.2",
+    "pg": "^8.23.1",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "tailwind-merge": "^3.7.0"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.15",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@tailwindcss/turbopack": "^4",
+    "@types/node": "^22.20.5",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.2",
+    "postcss": "^8.5.32",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vitest": "^5.0.5"
+  }
+}

@@ -1,0 +1,149 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Memeora Roboto";
+  src: url("/fonts/Roboto-VariableFont_wdth,wght.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light;
+
+  /* Canonical Memeora Clear Current brand palette from design.md */
+  --brand-deep-current: #0d47a1;
+  --brand-bright-current: #2196f3;
+  --brand-sky-blue: #90caf9;
+  --brand-cloud-blue: #e3f2fd;
+
+  /* Surfaces & Hierarchy (55% Cloud Blue ground, 27% Sky Blue/supporting tones, 18% Bright/Deep Current accents) */
+  --surface-base: #f0f7ff;
+  --surface-canvas: #e3f2fd;
+  --surface-card: #ffffff;
+  --surface-card-subtle: #f8fbfe;
+  --surface-elevated: #ffffff;
+  --surface-pill: #ffffff;
+  --surface-sky-tint: rgba(144, 202, 249, 0.22);
+  --surface-sky-solid: #e1f0fe;
+  --surface-cloud-solid: #edf6fd;
+
+  /* Borders & Inset Hairlines */
+  --border-subtle: rgba(13, 71, 161, 0.08);
+  --border-card: rgba(13, 71, 161, 0.12);
+  --border-pill: rgba(144, 202, 249, 0.45);
+  --border-strong: rgba(33, 150, 243, 0.35);
+  --border-focus: var(--brand-bright-current);
+
+  /* Typography & Ink Hierarchy (WCAG AA AAA verified) */
+  --ink-primary: #0d47a1;
+  --ink-body: #1a365d;
+  --ink-secondary: #2b527d;
+  --ink-muted: #537699;
+  --ink-inverse: #ffffff;
+
+  /* Semantic Intent Tokens */
+  --accent-primary: #0d47a1;
+  --accent-primary-hover: #083378;
+  --accent-interactive: #2196f3;
+  --accent-interactive-hover: #1976d2;
+  --accent-support: #90caf9;
+  --accent-positive: #0b704d;
+  --accent-positive-bg: #e6f6f0;
+  --accent-positive-border: rgba(11, 112, 77, 0.25);
+  --accent-warning: #9a4d06;
+  --accent-warning-bg: #fef3e2;
+  --accent-warning-border: rgba(154, 77, 6, 0.25);
+  --accent-danger: #b42318;
+  --accent-danger-bg: #fee4e2;
+  --accent-danger-border: rgba(180, 35, 24, 0.25);
+
+  /* Tactile Shadows & Depth from Artwork Reference */
+  --shadow-sm: 0 1px 2px rgba(13, 71, 161, 0.04);
+  --shadow-card: 0 4px 20px -4px rgba(13, 71, 161, 0.08), 0 2px 6px -1px rgba(13, 71, 161, 0.03);
+  --shadow-pill: 0 8px 24px -6px rgba(13, 71, 161, 0.12), 0 2px 8px -2px rgba(13, 71, 161, 0.05);
+  --shadow-hero: 0 12px 32px -8px rgba(13, 71, 161, 0.16), 0 4px 12px -2px rgba(33, 150, 243, 0.08);
+  --shadow-modal: 0 24px 48px -12px rgba(13, 71, 161, 0.22);
+
+  /* Radii Scale */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-pill: 9999px;
+
+  /* Motion DNA */
+  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-micro: 120ms;
+  --duration-standard: 220ms;
+  --duration-structural: 320ms;
+
+  --background: var(--surface-base);
+  --foreground: var(--ink-primary);
+}
+
+@theme inline {
+  --font-sans: "Memeora Roboto", Arial, sans-serif;
+  --color-brand-deep: var(--brand-deep-current);
+  --color-brand-bright: var(--brand-bright-current);
+  --color-brand-sky: var(--brand-sky-blue);
+  --color-brand-cloud: var(--brand-cloud-blue);
+  --color-surface-base: var(--surface-base);
+  --color-surface-card: var(--surface-card);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-ink-primary: var(--ink-primary);
+  --color-ink-body: var(--ink-body);
+  --color-ink-secondary: var(--ink-secondary);
+  --color-ink-muted: var(--ink-muted);
+}
+
+body {
+  font-family: "Memeora Roboto", Arial, sans-serif;
+  background-color: var(--surface-base);
+  color: var(--ink-body);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* Subtle fintech mesh atmosphere on the canvas */
+.app-mesh-canvas {
+  background: 
+    radial-gradient(circle at 10% 10%, rgba(144, 202, 249, 0.25) 0%, transparent 45%),
+    radial-gradient(circle at 90% 90%, rgba(227, 242, 253, 0.8) 0%, transparent 50%),
+    linear-gradient(180deg, #f0f7ff 0%, #e3f2fd 100%);
+  background-attachment: fixed;
+}
+
+/* Tabular Numerals for all financial figures, timers, and balances */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* WCAG AA Visible Focus Contract */
+:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* Mobile Safe Area & Input Zoom Prevention */
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Reduced Motion Health Requirement (WCAG 2.3.3) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
