@@ -18,7 +18,7 @@ export function useSessionWallet(walletAddress: string) {
   const dAppKit = useDAppKit();
   const account = useCurrentAccount();
   const wallets = useWallets();
-  const supportedWallets = wallets.filter(({ name }) => /slush|suiet|sui wallet/i.test(name));
+  const supportedWallets = wallets;
 
   const isSessionWallet = account?.address.toLowerCase() === walletAddress.toLowerCase();
 

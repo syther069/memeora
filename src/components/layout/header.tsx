@@ -1,9 +1,10 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { HelpCircle, Search } from 'iconoir-react';
-import { Button } from '@/components/ui/button';
+import { HelpCircle, Search, Wallet } from 'iconoir-react';
+import { Button, linkButtonClass } from '@/components/ui/button';
 import { useAppSession } from '@/components/auth/app-session-guard';
 import { AccountMenu } from './account-menu';
 import { BrandMark } from './brand-mark';
@@ -59,7 +60,9 @@ export function Header({ onOpenCommand, onOpenGuide }: { onOpenCommand: () => vo
         <Button variant="outline" size="sm" onClick={onOpenGuide} leftIcon={<HelpCircle aria-hidden className="h-4 w-4" />}>
           Guide
         </Button>
-        {walletAddress && <AccountMenu walletAddress={walletAddress} />}
+        {walletAddress
+          ? <AccountMenu walletAddress={walletAddress} />
+          : <Link href={`/sign-in?next=${encodeURIComponent(pathname)}`} className={linkButtonClass('primary', 'sm')}><Wallet aria-hidden className="h-4 w-4" />Connect wallet</Link>}
       </div>
     </header>
   );

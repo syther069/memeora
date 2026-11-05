@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCurrentAccount, useDAppKit, useWallets } from '@mysten/dapp-kit-react';
 import { ArrowRight, Check, ShieldCheck, Wallet } from 'iconoir-react';
@@ -17,6 +18,12 @@ async function readApiResult(response: Response) {
   if (!response.ok || result?.success !== true) throw new Error(result?.error?.message ?? 'The request could not be completed.');
   return result.data;
 }
+
+const INSTALLABLE_WALLETS = [
+  { name: 'Suiet', href: 'https://suiet.app' },
+  { name: 'Phantom', href: 'https://phantom.com' },
+  { name: 'Nightly', href: 'https://nightly.app' },
+];
 
 const subscribeToNothing = () => () => undefined;
 const getClientWalletSnapshot = () => true;
@@ -83,7 +90,9 @@ export default function SignInPage() {
     }
   };
 
-  const supportedWallets = wallets.filter(({ name }) => /slush|suiet|sui wallet/i.test(name));
+  // Installed wallets first, so a wallet someone already has is the easy choice.
+  const supportedWallets = [...wallets].sort((a, b) => Number(/slush/i.test(a.name)) - Number(/slush/i.test(b.name)));
+  const installable = INSTALLABLE_WALLETS.filter((option) => !wallets.some(({ name }) => name.toLowerCase().includes(option.name.toLowerCase())));
 
   return (
     <div className="grid min-h-dvh lg:grid-cols-[1.1fr_1fr]">
@@ -138,12 +147,26 @@ export default function SignInPage() {
             </div>
           ) : (
             <div role="status" className="mt-6 rounded-[var(--radius-md)] bg-[var(--surface-well)] p-4 text-sm leading-relaxed text-[var(--ink-secondary)]">
-              No Sui wallet was found. Install or unlock Slush, Suiet or Sui Wallet, then reload this page.
+              No Sui wallet was found in this browser. Install or unlock one, then reload this page.
             </div>
+          )}
+
+          {walletRuntimeReady && !account && installable.length > 0 && (
+            <p className="mt-4 text-xs leading-relaxed text-[var(--ink-secondary)]">
+              Need a wallet? Install{' '}
+              {installable.map((option, index) => (
+                <span key={option.name}>
+                  {index > 0 && (index === installable.length - 1 ? ' or ' : ', ')}
+                  <a href={option.href} target="_blank" rel="noopener noreferrer" className="font-semibold text-[var(--brand-blue)] underline">{option.name}</a>
+                </span>
+              ))}
+              , then reload this page.
+            </p>
           )}
 
           {error && <p role="alert" className="mt-3 rounded-[var(--radius-sm)] border border-[var(--accent-danger-border)] bg-[var(--accent-danger-bg)] p-3 text-sm text-[var(--accent-danger)]">{error}</p>}
           <div className="mt-6 flex items-start gap-2.5 border-t border-[var(--border-subtle)] pt-4 text-xs leading-relaxed text-[var(--ink-muted)]"><ShieldCheck aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-[var(--brand-blue)]" /><p>Memeora never asks for your recovery phrase or private key. Each wallet has its own private workspace.</p></div>
+          <Link href="/dashboard" className="hit mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[var(--brand-blue)] hover:underline">Look around without a wallet<ArrowRight aria-hidden className="h-3.5 w-3.5" /></Link>
         </section>
       </main>
     </div>

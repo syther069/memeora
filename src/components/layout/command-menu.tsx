@@ -24,7 +24,7 @@ interface CommandItem {
 export function CommandMenu({ isOpen, onClose, onOpenGuide }: { isOpen: boolean; onClose: () => void; onOpenGuide: () => void }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { mode, setMode } = useAppSession();
+  const { mode, setMode, isGuest } = useAppSession();
   const { openAddTransaction, openImportSui, openOtherChain } = useLedger();
   const { signOut } = useSignOut();
   const reducedMotion = useReducedMotion();
@@ -36,6 +36,18 @@ export function CommandMenu({ isOpen, onClose, onOpenGuide }: { isOpen: boolean;
   const otherMode = mode === 'business' ? 'personal' : 'business';
   const items = React.useMemo<CommandItem[]>(() => {
     const go = (href: string) => () => router.push(href);
+    if (isGuest) {
+      return [
+        { id: 'connect', group: 'Actions', label: 'Connect a wallet', keywords: 'sign in login slush suiet', icon: Wallet, run: go(`/sign-in?next=${encodeURIComponent(pathname)}`) },
+        { id: 'guide', group: 'Actions', label: 'Open the guide', keywords: 'help how tutorial', icon: HelpCircle, run: onOpenGuide },
+        { id: 'go-overview', group: 'Go to', label: 'Overview', keywords: 'dashboard home', icon: ViewGrid, run: go(`/${mode}`) },
+        { id: 'go-transactions', group: 'Go to', label: 'Transactions', keywords: 'ledger', icon: List, run: go('/transactions') },
+        { id: 'go-budgets', group: 'Go to', label: 'Budgets & goals', keywords: 'budget savings', icon: PiggyBank, run: go('/budgets') },
+        { id: 'go-assistant', group: 'Go to', label: 'Assistant', keywords: 'ask chat ai', icon: Sparks, run: go('/assistant') },
+        { id: 'go-memory', group: 'Go to', label: 'Memory', keywords: 'walrus rules', icon: Brain, run: go('/memory') },
+        { id: 'go-proof', group: 'Go to', label: 'On-chain proof', keywords: 'verify sui tatum', icon: ShieldCheck, run: go('/verification') },
+      ];
+    }
     return [
       { id: 'add', group: 'Actions', label: 'Add a transaction', keywords: 'new expense income', icon: Plus, hint: 'N', run: openAddTransaction },
       { id: 'import', group: 'Actions', label: 'Import from Sui wallet', keywords: 'crypto fetch chain', icon: Wallet, run: openImportSui },
@@ -61,7 +73,7 @@ export function CommandMenu({ isOpen, onClose, onOpenGuide }: { isOpen: boolean;
       { id: 'go-memory', group: 'Go to', label: 'Memory', keywords: 'walrus rules', icon: Brain, run: go('/memory') },
       { id: 'go-proof', group: 'Go to', label: 'On-chain proof', keywords: 'verify sui tatum', icon: ShieldCheck, run: go('/verification') },
     ];
-  }, [mode, otherMode, pathname, router, setMode, signOut, openAddTransaction, openImportSui, openOtherChain, onOpenGuide]);
+  }, [isGuest, mode, otherMode, pathname, router, setMode, signOut, openAddTransaction, openImportSui, openOtherChain, onOpenGuide]);
 
   const needle = query.trim().toLowerCase();
   const visible = needle ? items.filter((item) => `${item.label} ${item.keywords ?? ''}`.toLowerCase().includes(needle)) : items;

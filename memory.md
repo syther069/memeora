@@ -1761,3 +1761,12 @@ Nothing committed.
 - **Commands:** `npm run typecheck`, `npm run lint`, `npx vitest run`, `npm run build`; exit codes reported to the user this turn (all 0, server stopped).
 - **Not tested:** screen reader speech, Safari, Firefox, physical phones, the user's own wallet. `Design-Quality-Codex.pdf`, the checklist and security PDFs and the `design-taste-frontend` skill remain unread.
 - **Integration status:** unchanged. No Walrus writes. Nothing committed.
+
+### 2026-11-05 — Deployed to Vercel; Wallet No Longer Required to Look Around
+
+- **Vercel:** project `memora`, public URL `https://memora-mu-kohl.vercel.app` (user recreated the project; `MEMEORA_APP_ORIGIN` set to that URL). Slush flags this address and the deployment URL as malicious; the user has been told to request a review. Cause not known.
+- **User decision:** the landing page and dashboard open without a wallet, and other wallets are offered. `/` is now a landing page. Signed-out visitors see the app frame and `GuestView`, with no figures and no finance API calls. Identity is unchanged: every finance API still needs a verified wallet session (401 confirmed signed out), and `/onboarding` still goes to sign-in.
+- **Wallets:** sign-in lists every detected Sui wallet instead of only Slush, Suiet and Sui Wallet, with Slush last, and links to install Suiet, Phantom or Nightly. Only the install links were checked; no signature was made with Phantom or Nightly.
+- **Browser checks (agent-browser, no session, local dev):** 23 signed-out checks passed: landing, dashboard, 7 app pages, no finance API calls, sign-in links, phone width.
+- **Commands:** `npm run typecheck`, `npm run lint`, `npx vitest run`, `npm run build`; exit codes reported to the user this turn.
+- **Not tested:** real wallet sign-in with any non-Slush wallet; these changes on the live site until committed and deployed.

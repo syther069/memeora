@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useAppSession } from '@/components/auth/app-session-guard';
 import { AddOnChainDialog } from '@/components/transactions/add-onchain-dialog';
 import { ImportSuiDialog } from '@/components/transactions/import-sui-dialog';
 import { useToast } from '@/components/ui/toast';
@@ -45,6 +46,7 @@ function isTyping(target: EventTarget | null) {
 
 /** One set of transaction forms for the whole signed-in app. */
 export function LedgerProvider({ children }: { children: React.ReactNode }) {
+  const { isGuest } = useAppSession();
   const { toast } = useToast();
   const undoable = useUndoable();
   const [version, setVersion] = React.useState(0);
@@ -92,14 +94,14 @@ export function LedgerProvider({ children }: { children: React.ReactNode }) {
   // N adds a transaction from anywhere, unless the user is typing.
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key.toLowerCase() !== 'n' || event.ctrlKey || event.metaKey || event.altKey || isTyping(event.target)) return;
+      if (isGuest || event.key.toLowerCase() !== 'n' || event.ctrlKey || event.metaKey || event.altKey || isTyping(event.target)) return;
       if (document.querySelector('[role="dialog"]')) return;
       event.preventDefault();
       openAddTransaction();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [openAddTransaction]);
+  }, [isGuest, openAddTransaction]);
 
   const handleSaved = (saved: SavedTransaction, wasEdit: boolean) => {
     notifyLedgerChanged();

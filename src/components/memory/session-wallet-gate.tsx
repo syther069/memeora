@@ -40,7 +40,7 @@ export function SessionWalletGate({ walletAddress, children }: { walletAddress: 
     <div className="space-y-2">
       <p className="text-xs leading-relaxed text-[var(--ink-secondary)]">Connect the wallet you signed in with ({short(walletAddress)}) to continue.</p>
       {supportedWallets.length === 0 ? (
-        <p role="alert" className="text-xs text-[var(--accent-warning)]">No Sui wallet was found in this browser. Install or unlock Slush, then reload this page.</p>
+        <p role="alert" className="text-xs text-[var(--accent-warning)]">No Sui wallet was found in this browser. Install or unlock a Sui wallet, then reload this page.</p>
       ) : (
         <div className="flex flex-wrap gap-2">
           {supportedWallets.map((wallet) => (

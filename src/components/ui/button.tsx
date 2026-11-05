@@ -29,6 +29,11 @@ const SIZES = {
   pill: 'h-10 px-5 text-sm gap-2 rounded-full',
 };
 
+/** A real link that looks like a button, for going somewhere rather than doing something. */
+export function linkButtonClass(variant: keyof typeof VARIANTS = 'primary', size: keyof typeof SIZES = 'md', className?: string) {
+  return cn('inline-flex items-center justify-center whitespace-nowrap transition-[background-color,border-color,color] duration-150', VARIANTS[variant], SIZES[size], className);
+}
+
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   (
     { className, variant = 'primary', size = 'md', isLoading = false, disabled, leftIcon, rightIcon, allowRepeatClicks = false, children, onClick, ...props },

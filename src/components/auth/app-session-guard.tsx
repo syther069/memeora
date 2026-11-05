@@ -11,6 +11,8 @@ type SessionState = 'checking' | 'authenticated' | 'unauthenticated' | 'error';
 
 interface AppSession {
   walletAddress: string | null;
+  /** Looking around without a wallet: no account, so no data calls. */
+  isGuest: boolean;
   preferredCurrency: CurrencyCode;
   /** The active workspace. Every finance request carries it. */
   mode: AppMode;
@@ -21,6 +23,7 @@ interface AppSession {
 
 const AppSessionContext = React.createContext<AppSession>({
   walletAddress: null,
+  isGuest: false,
   preferredCurrency: 'INR',
   mode: 'personal',
   setMode: () => undefined,
@@ -34,8 +37,8 @@ export function useAppSession() {
 /**
  * Checks the wallet session and onboarding once when the signed-in area opens
  * (each check costs several database round trips), then keeps the answer while
- * the user moves between pages. Pages render only when they are allowed to, so
- * a page that is about to be redirected away never starts loading data.
+ * the user moves between pages. Pages that load data render only for a signed-in
+ * wallet; a visitor without one sees the app frame and GuestView instead.
  */
 export function AppSessionGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -64,7 +67,8 @@ export function AppSessionGuard({ children }: { children: React.ReactNode }) {
         if (!active) return;
         if (!result.data.authenticated) {
           setState('unauthenticated');
-          router.replace(`/sign-in?next=${encodeURIComponent(firstPath.current || '/dashboard')}`);
+          // Setup needs an account; everything else can be looked at first.
+          if (firstPath.current === '/onboarding') router.replace('/sign-in?next=%2Fonboarding');
           return;
         }
         const onboarding = await onboardingResponse.json();
@@ -99,12 +103,13 @@ export function AppSessionGuard({ children }: { children: React.ReactNode }) {
   const applyMode = React.useCallback((next: AppMode) => {
     setFinanceApiMode(next);
     setModeState(next);
-    rememberMode(next);
-  }, [rememberMode]);
+    // A visitor has no profile to save it to.
+    if (state === 'authenticated') rememberMode(next);
+  }, [rememberMode, state]);
 
   // Opening an overview's address makes that workspace active, before its page loads data.
   const routeMode: AppMode | null = pathname === '/business' ? 'business' : pathname === '/personal' ? 'personal' : null;
-  if (state === 'authenticated' && routeMode !== null && routeMode !== mode) {
+  if ((state === 'authenticated' || state === 'unauthenticated') && routeMode !== null && routeMode !== mode) {
     // Adjusted while rendering, so no page ever loads with the other workspace's data.
     setFinanceApiMode(routeMode);
     setModeState(routeMode);
@@ -122,8 +127,10 @@ export function AppSessionGuard({ children }: { children: React.ReactNode }) {
     else if (alreadyOnboarded) router.replace('/dashboard');
   }, [mustOnboard, alreadyOnboarded, router]);
 
+  const isGuest = state === 'unauthenticated';
   const session = React.useMemo<AppSession>(() => ({
     walletAddress,
+    isGuest,
     preferredCurrency,
     mode,
     setMode: applyMode,
@@ -135,9 +142,9 @@ export function AppSessionGuard({ children }: { children: React.ReactNode }) {
       }
       setOnboardingRequired(false);
     },
-  }), [walletAddress, preferredCurrency, mode, applyMode]);
+  }), [walletAddress, isGuest, preferredCurrency, mode, applyMode]);
 
-  if (state === 'authenticated' && !mustOnboard && !alreadyOnboarded) {
+  if ((state === 'authenticated' && !mustOnboard && !alreadyOnboarded) || (isGuest && pathname !== '/onboarding')) {
     return <AppSessionContext.Provider value={session}>{children}</AppSessionContext.Provider>;
   }
   if (state === 'error') return <main className="grid min-h-dvh place-items-center p-6"><div className="max-w-sm text-center"><h1 className="text-xl font-bold text-[var(--ink-primary)]">Could not check your session</h1><p className="mt-2 text-sm text-[var(--ink-secondary)]">Check your connection, then try again. Nothing you saved was lost.</p><button type="button" className="mt-4 h-10 rounded-full bg-[var(--brand-blue)] px-5 text-sm font-semibold text-[var(--ink-inverse)] hover:bg-[var(--brand-blue-hover)] cursor-pointer" onClick={() => setRetry((value) => value + 1)}>Check session again</button></div></main>;

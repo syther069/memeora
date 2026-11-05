@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { usePathname } from 'next/navigation';
 import { useAppSession } from '@/components/auth/app-session-guard';
+import { GuestView } from '@/components/auth/guest-view';
 import { GuideDialog } from '@/components/guide/guide-dialog';
 import { CommandMenu } from './command-menu';
 import { Header } from './header';
@@ -14,7 +15,7 @@ import { SiteFooter } from './site-footer';
 /** App frame. During first-run setup there is no navigation: setup comes first. */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { mode } = useAppSession();
+  const { mode, isGuest } = useAppSession();
   const [isCommandOpen, setIsCommandOpen] = React.useState(false);
   const [isGuideOpen, setIsGuideOpen] = React.useState(false);
   const isSetup = pathname === '/onboarding';
@@ -51,7 +52,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <ModeSwitcher className="mb-4 w-full max-w-xs lg:hidden" />
           {/* A workspace switch remounts the page, so it loads that workspace's data. */}
           <React.Fragment key={mode}>
-            <React.ViewTransition>{children}</React.ViewTransition>
+            <React.ViewTransition>{isGuest ? <GuestView /> : children}</React.ViewTransition>
           </React.Fragment>
           <SiteFooter className="mt-8" />
         </main>
