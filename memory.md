@@ -1770,3 +1770,9 @@ Nothing committed.
 - **Browser checks (agent-browser, no session, local dev):** 23 signed-out checks passed: landing, dashboard, 7 app pages, no finance API calls, sign-in links, phone width.
 - **Commands:** `npm run typecheck`, `npm run lint`, `npx vitest run`, `npm run build`; exit codes reported to the user this turn.
 - **Not tested:** real wallet sign-in with any non-Slush wallet; these changes on the live site until committed and deployed.
+
+### 2026-11-05 — GitHub Repo Connected to Vercel
+
+- **State:** the user connected `syther069/memora` to the Vercel project `memora`; Vercel's project search by repo URL returns it. This commit is the test of whether a push deploys by itself.
+- **Open security item:** when checked, `DATABASE_MIGRATION_URL` (owner login) was on Vercel for production and preview, and imported keys were readable rather than Secret. The user has been told to remove it, re-add the keys as Secret and limit them to Production. Not confirmed done.
+- **Integration status:** Walrus, Tatum and the Assistant have not been tested on the live site with a signed-in wallet.
