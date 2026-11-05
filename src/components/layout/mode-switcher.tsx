@@ -2,21 +2,22 @@
 
 import * as React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { Briefcase, User } from 'lucide-react';
+import { Suitcase, User } from 'iconoir-react';
 import { useAppSession } from '@/components/auth/app-session-guard';
 import { cn } from '@/lib/utils';
 import type { AppMode } from '@/lib/app-mode';
 
 const OPTIONS: Array<{ mode: AppMode; label: string; icon: typeof User }> = [
   { mode: 'personal', label: 'Personal', icon: User },
-  { mode: 'business', label: 'Business', icon: Briefcase },
+  { mode: 'business', label: 'Business', icon: Suitcase },
 ];
 
 /** Switches workspace. From an overview it goes to the other overview; elsewhere it stays on the page. */
-export function ModeSwitcher({ className }: { className?: string }) {
+export function ModeSwitcher({ className, tone = 'canvas' }: { className?: string; tone?: 'canvas' | 'rail' }) {
   const { mode, setMode } = useAppSession();
   const pathname = usePathname();
   const router = useRouter();
+  const onRail = tone === 'rail';
 
   const choose = (next: AppMode) => {
     if (next === mode) return;
@@ -25,7 +26,7 @@ export function ModeSwitcher({ className }: { className?: string }) {
   };
 
   return (
-    <div role="group" aria-label="Workspace" className={cn('grid grid-cols-2 gap-1 rounded-full border border-[var(--brand-sky-blue)]/70 bg-[var(--surface-cloud-solid)] p-1', className)}>
+    <div role="group" aria-label="Workspace" className={cn('grid grid-cols-2 gap-1 rounded-full p-1', onRail ? 'bg-white/12' : 'bg-[var(--surface-sunken)]', className)}>
       {OPTIONS.map((option) => {
         const Icon = option.icon;
         const isActive = mode === option.mode;
@@ -36,8 +37,10 @@ export function ModeSwitcher({ className }: { className?: string }) {
             aria-pressed={isActive}
             onClick={() => choose(option.mode)}
             className={cn(
-              'flex items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-all cursor-pointer',
-              isActive ? 'bg-[var(--brand-deep-current)] text-white shadow-xs' : 'text-[var(--ink-muted)] hover:text-[var(--ink-primary)]',
+              'flex h-8 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-semibold transition-colors duration-150 cursor-pointer',
+              isActive
+                ? onRail ? 'bg-[var(--brand-cream)] text-[var(--brand-blue)]' : 'bg-[var(--brand-blue)] text-[var(--ink-inverse)]'
+                : onRail ? 'text-[var(--ink-on-blue-muted)] hover:text-white' : 'text-[var(--ink-secondary)] hover:text-[var(--ink-primary)]',
             )}
           >
             <Icon aria-hidden className="h-3.5 w-3.5" />

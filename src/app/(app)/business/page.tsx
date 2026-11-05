@@ -2,17 +2,21 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { ArrowRight, Brain, Check, Pencil, Receipt, RotateCcw, ShieldCheck, Sparkles, Wallet } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { ArrowRight, EditPencil, Page, Sparks, Plus } from 'iconoir-react';
+import { useLedger } from '@/components/layout/ledger-provider';
+import { CategoryBars, GuideStrip, MonthBars, RulesPanel, SectionHead, UsageGauge, type MemorySummary, type OverviewPayload } from '@/components/overview/overview-parts';
+import { TxRow } from '@/components/transactions/tx-row';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { Modal } from '@/components/ui/modal';
+import { ListSkeleton, Skeleton } from '@/components/ui/skeleton';
+import { FreshnessNote, LoadErrorPanel } from '@/components/ui/status-panels';
 import { useToast } from '@/components/ui/toast';
-import { useLedger } from '@/components/layout/ledger-provider';
 import { currentPeriod, financeApi, formatMoney, type ApiBudget, type ApiTransaction } from '@/lib/finance-api';
-import { formatLedgerDate, formatPeriod } from '@/lib/dates';
+import { formatPeriod } from '@/lib/dates';
+import { useFinanceResource } from '@/lib/use-finance-resource';
 import { formatRunway, type BusinessMetrics } from '@/modules/finance/domain/business-metrics';
 import { parseMajorUnitsToMinor } from '@/modules/finance/domain/money';
 
@@ -28,52 +32,39 @@ interface Overview {
   otherCurrencies: Array<{ currency: Currency; incomeMinor: number; expenseMinor: number }>;
 }
 
-interface MemorySummary { consentEnabled: boolean; total: number; storedOnWalrus: number }
-
 export default function BusinessOverviewPage() {
   const { toast } = useToast();
-  const { version, openAddTransaction } = useLedger();
-  const [overview, setOverview] = React.useState<Overview | null>(null);
-  const [budget, setBudget] = React.useState<ApiBudget | null>(null);
-  const [transactions, setTransactions] = React.useState<ApiTransaction[]>([]);
-  const [memory, setMemory] = React.useState<MemorySummary | null>(null);
-  const [loadError, setLoadError] = React.useState<string | null>(null);
+  const { version, hiddenIds, openAddTransaction } = useLedger();
+  const period = currentPeriod();
+  const periodLabel = formatPeriod(period);
+
+  const figures = useFinanceResource<Overview>(`/api/business?period=${period}`, version);
+  const ledger = useFinanceResource<{ transactions: ApiTransaction[] }>('/api/transactions?limit=5', version);
+  const budgets = useFinanceResource<{ budget: ApiBudget | null }>(`/api/budgets?period=${period}`, version);
+  const charts = useFinanceResource<OverviewPayload>(`/api/overview?period=${period}`, version);
+  const memory = useFinanceResource<MemorySummary>('/api/memory', version);
+
   const [isCashOpen, setIsCashOpen] = React.useState(false);
   const [cashInput, setCashInput] = React.useState('');
   const [cashCurrency, setCashCurrency] = React.useState<Currency>('INR');
   const [cashError, setCashError] = React.useState<string | null>(null);
   const [isSavingCash, setIsSavingCash] = React.useState(false);
-  const period = currentPeriod();
-  const periodLabel = formatPeriod(period);
 
-  const load = React.useCallback(async () => {
-    setLoadError(null);
-    try {
-      const [figures, ledger, budgets, memorySummary] = await Promise.all([
-        financeApi<Overview>(`/api/business?period=${period}`),
-        financeApi<{ transactions: ApiTransaction[] }>('/api/transactions?limit=5'),
-        financeApi<{ budget: ApiBudget | null }>(`/api/budgets?period=${period}`),
-        // Memory status is extra: the figures still show if it fails.
-        financeApi<MemorySummary>('/api/memory').catch(() => null),
-      ]);
-      setOverview(figures);
-      setTransactions(ledger.transactions);
-      setBudget(budgets.budget);
-      setMemory(memorySummary);
-    } catch (error) {
-      setLoadError(error instanceof Error ? error.message : 'Your business figures could not be loaded.');
-    }
-  }, [period]);
-
-  React.useEffect(() => {
-    const timer = window.setTimeout(() => { void load(); }, 0);
-    return () => window.clearTimeout(timer);
-  }, [load, version]);
+  const overview = figures.data;
+  const currency = overview?.currency ?? 'INR';
+  const metrics = overview?.metrics;
+  const budget = budgets.data?.budget ?? null;
+  const transactions = (ledger.data?.transactions ?? []).filter((tx) => !hiddenIds.has(tx.id));
+  const hasTransactions = transactions.length > 0;
+  const hasMemory = (memory.data?.total ?? 0) > 0;
+  const money = (minor: number) => formatMoney(minor, currency);
+  const figuresFailed = Boolean(figures.error) && !figures.data;
+  const limitFailed = figuresFailed || (Boolean(budgets.error) && !budgets.data);
 
   const openCash = () => {
     setCashError(null);
     setCashInput(overview?.cashMinor === null || overview?.cashMinor === undefined ? '' : (overview.cashMinor / 100).toFixed(2));
-    setCashCurrency(overview?.currency ?? 'INR');
+    setCashCurrency(currency);
     setIsCashOpen(true);
   };
 
@@ -81,9 +72,9 @@ export default function BusinessOverviewPage() {
     event.preventDefault();
     if (isSavingCash) return;
     const trimmed = cashInput.trim();
-    const cashMinor = trimmed === '' ? null : trimmed === '0' ? 0 : parseMajorUnitsToMinor(trimmed);
+    const cashMinor = trimmed === '' ? null : Number(trimmed) === 0 ? 0 : parseMajorUnitsToMinor(trimmed);
     if (trimmed !== '' && cashMinor === null) {
-      setCashError('Enter an amount with up to two decimal places, or leave it empty.');
+      setCashError('Enter an amount with up to two decimal places, or leave it empty to clear it.');
       return;
     }
     setIsSavingCash(true);
@@ -92,199 +83,166 @@ export default function BusinessOverviewPage() {
       await financeApi('/api/business', { method: 'PUT', body: JSON.stringify({ cashMinor, currency: cashCurrency }) });
       setIsCashOpen(false);
       toast({ type: 'success', title: 'Cash figure saved', description: 'Runway is worked out from it.' });
-      void load();
+      void figures.refresh();
     } catch (error) {
-      setCashError(error instanceof Error ? error.message : 'The cash figure could not be saved. Please retry.');
+      setCashError(error instanceof Error ? error.message : 'The cash figure could not be saved. Please try again.');
     } finally {
       setIsSavingCash(false);
     }
   };
 
-  const currency = overview?.currency ?? 'INR';
-  const money = (minor: number) => (overview ? formatMoney(minor, currency) : loadError ? '—' : '…');
-  const metrics = overview?.metrics;
-  const hasTransactions = transactions.length > 0;
-  const hasMemory = (memory?.total ?? 0) > 0;
-  const steps = [
-    { title: 'Record', text: 'Add revenue and costs, or import them from your Sui wallet. Every figure here comes from these entries.', done: hasTransactions, href: null, action: 'Add a transaction', icon: Receipt },
-    { title: 'Remember', text: 'Save how you run the business, like “keep 6 months of runway”. It is stored on Walrus, apart from your personal memories.', done: hasMemory, href: '/memory', action: 'Save a business memory', icon: Brain },
-    { title: 'Ask', text: 'Ask “can we afford this hire?”. The sums are exact, and your rules guide the advice.', done: false, href: '/assistant', action: 'Ask the Assistant', icon: Sparkles },
-    { title: 'Verify', text: 'Check on Sui Mainnet that your business memories are really stored.', done: false, href: '/verification', action: 'See the proof', icon: ShieldCheck },
-  ];
-
-  const isLoading = !overview && !loadError;
-  const burnNote = !metrics
-    ? (isLoading ? 'Loading…' : 'Not available right now.')
-    : metrics.burnMinor === null
-    ? 'No records yet to base this on.'
-    : metrics.notBurning
-      ? `Revenue covers costs, averaged over ${metrics.burnMonths} ${metrics.burnMonths === 1 ? 'month' : 'months'}.`
-      : `Costs minus revenue, averaged over ${metrics.burnMonths} ${metrics.burnMonths === 1 ? 'month' : 'months'} with records.`;
+  const burnNote = !metrics ? ' '
+    : metrics.burnMinor === null ? 'No records yet to base this on.'
+      : metrics.notBurning ? `Revenue covers costs, averaged over ${metrics.burnMonths} ${metrics.burnMonths === 1 ? 'month' : 'months'}.`
+        : `Costs minus revenue, averaged over ${metrics.burnMonths} ${metrics.burnMonths === 1 ? 'month' : 'months'} with records.`;
 
   const remainingLimit = budget && metrics && budget.currency === currency ? budget.amountMinor - metrics.expensesMinor : null;
+  const limitUsed = budget && metrics && budget.currency === currency ? Math.round((metrics.expensesMinor / budget.amountMinor) * 100) : null;
+  const statClass = 'mt-1 text-2xl font-bold tracking-tight tabular-nums text-[var(--ink-primary)]';
 
   return (
-    <div className="space-y-6">
-      {loadError && (
-        <Card role="alert" className="flex flex-wrap items-center justify-between gap-4 border-[var(--accent-warning-border)]">
-          <div>
-            <h3 className="font-bold text-[var(--ink-primary)]">Could not load your business figures</h3>
-            <p className="mt-1 text-sm text-[var(--ink-muted)]">{loadError}</p>
-          </div>
-          <Button variant="outline" size="sm" onClick={() => void load()} leftIcon={<RotateCcw className="w-3.5 h-3.5" />}>Try again</Button>
-        </Card>
+    <div className="space-y-4">
+      {figures.error && !overview && <LoadErrorPanel title="Could not load your business figures" message={figures.error} offline={figures.isOffline} onRetry={() => figures.refresh()} />}
+
+      {overview && ledger.data && !(hasTransactions && hasMemory) && (
+        <GuideStrip
+          title="Set up your business workspace"
+          steps={[
+            { title: 'Transaction recorded', action: 'Record revenue or a cost', done: hasTransactions, onClick: openAddTransaction },
+            { title: 'Rule saved', action: 'Save a rule, like “keep 6 months of runway”', done: hasMemory, href: '/memory' },
+            { title: 'Ask the Assistant', action: 'Ask “can we afford this hire?”', done: false, href: '/assistant' },
+            { title: 'See the proof', action: 'Check your memories on Sui', done: false, href: '/verification' },
+          ]}
+        />
       )}
 
-      {overview && !(hasTransactions && hasMemory) && (
-        <section aria-labelledby="business-guide-title">
-          <h2 id="business-guide-title" className="mb-3 text-sm font-bold text-[var(--ink-primary)]">How Memeora works for a business</h2>
-          <ol className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {steps.map((step, index) => {
-              const Icon = step.icon;
-              return (
-                <li key={step.title} className="flex flex-col justify-between gap-3 rounded-2xl border border-[var(--border-card)] bg-[var(--surface-card)] p-4">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className={`grid h-7 w-7 place-items-center rounded-full ${step.done ? 'bg-[var(--accent-positive-bg)] text-[var(--accent-positive)]' : 'bg-[var(--surface-sky-solid)] text-[var(--brand-deep-current)]'}`}>
-                        {step.done ? <Check aria-label="Done" className="h-4 w-4" /> : <Icon aria-hidden className="h-4 w-4" />}
-                      </span>
-                      <h3 className="text-sm font-bold text-[var(--ink-primary)]">{index + 1}. {step.title}</h3>
-                    </div>
-                    <p className="mt-2 text-xs leading-5 text-[var(--ink-secondary)]">{step.text}</p>
-                  </div>
-                  {!step.done && (step.href
-                    ? <Link href={step.href} className="inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-deep-current)] hover:underline">{step.action}<ArrowRight className="h-3.5 w-3.5" /></Link>
-                    : <button type="button" onClick={openAddTransaction} className="inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-deep-current)] hover:underline cursor-pointer">{step.action}<ArrowRight className="h-3.5 w-3.5" /></button>)}
-                </li>
-              );
-            })}
-          </ol>
-        </section>
-      )}
-
-      <section aria-label={`${periodLabel} business totals`} className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <Card variant="elevated" className="border-t-4 border-t-[var(--brand-deep-current)]">
-          <p className="text-xs font-bold text-[var(--ink-muted)]">Profit in {periodLabel}</p>
-          <p className={`my-2 text-3xl font-black tracking-tight tabular-nums sm:text-4xl ${metrics && metrics.profitMinor < 0 ? 'text-[var(--accent-danger)]' : 'text-[var(--ink-primary)]'}`}>{money(metrics?.profitMinor ?? 0)}</p>
-          <p className="text-xs text-[var(--ink-muted)]">Revenue minus expenses you recorded. Not your accounting profit.</p>
-        </Card>
-        <Card>
-          <p className="text-xs font-bold text-[var(--ink-muted)]">Revenue</p>
-          <p className="my-2 text-3xl font-extrabold tracking-tight tabular-nums text-[var(--ink-primary)]">{money(metrics?.revenueMinor ?? 0)}</p>
-          <p className="text-xs text-[var(--ink-muted)]">Everything recorded as income in {periodLabel}.</p>
-        </Card>
-        <Card>
-          <p className="text-xs font-bold text-[var(--ink-muted)]">Expenses</p>
-          <p className="my-2 text-3xl font-extrabold tracking-tight tabular-nums text-[var(--ink-primary)]">{money(metrics?.expensesMinor ?? 0)}</p>
-          <p className="text-xs text-[var(--ink-muted)]">
-            {!overview ? ' ' : remainingLimit === null ? <>No spend limit set. <Link href="/budgets" className="font-bold text-[var(--brand-deep-current)] hover:underline">Set one</Link></> : remainingLimit >= 0 ? `${money(remainingLimit)} left of your spend limit.` : `${money(Math.abs(remainingLimit))} over your spend limit.`}
-          </p>
-        </Card>
-      </section>
-
-      {overview && overview.otherCurrencies.length > 0 && (
-        <p className="text-xs text-[var(--ink-muted)]">
-          Figures show {currency} only. Also recorded this month: {overview.otherCurrencies.map((entry) => `${formatMoney(entry.incomeMinor, entry.currency)} in, ${formatMoney(entry.expenseMinor, entry.currency)} out`).join('; ')}.
-        </p>
-      )}
-
-      <section aria-label="Runway" className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <Card>
-          <p className="text-xs font-bold text-[var(--ink-muted)]">Monthly burn</p>
-          <p className="my-2 text-2xl font-extrabold tracking-tight tabular-nums text-[var(--ink-primary)]">{metrics?.burnMinor === null || !metrics ? '—' : money(metrics.burnMinor)}</p>
-          <p className="text-xs text-[var(--ink-muted)]">{burnNote}</p>
-        </Card>
-        <Card>
-          <div className="flex items-start justify-between gap-2">
-            <p className="text-xs font-bold text-[var(--ink-muted)]">Cash you hold</p>
-            <button type="button" onClick={openCash} aria-label="Edit cash figure" className="rounded-lg p-1 text-[var(--ink-muted)] hover:bg-[var(--surface-sky-tint)] hover:text-[var(--ink-primary)] cursor-pointer"><Pencil className="h-3.5 w-3.5" /></button>
-          </div>
-          <p className="my-2 text-2xl font-extrabold tracking-tight tabular-nums text-[var(--ink-primary)]">{overview?.cashMinor === null || !overview ? '—' : money(overview.cashMinor)}</p>
-          <p className="text-xs text-[var(--ink-muted)]">A figure you enter. Memeora does not read your bank or wallet balance.</p>
-        </Card>
-        <Card>
-          <p className="text-xs font-bold text-[var(--ink-muted)]">Runway</p>
-          <p className="my-2 text-2xl font-extrabold tracking-tight tabular-nums text-[var(--ink-primary)]">{metrics?.runwayTenths === null || !metrics ? '—' : formatRunway(metrics.runwayTenths)}</p>
-          <p className="text-xs text-[var(--ink-muted)]">
-            {!overview ? ' ' : metrics?.notBurning ? 'Not burning cash on these records.' : overview.cashMinor === null ? <button type="button" onClick={openCash} className="font-bold text-[var(--brand-deep-current)] hover:underline cursor-pointer">Enter your cash to see this</button> : metrics?.burnMinor === null ? 'Record some transactions to see this.' : 'Cash divided by monthly burn, rounded down.'}
-          </p>
-        </Card>
-      </section>
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card className="p-5 sm:p-6">
-          <h3 className="text-base font-bold text-[var(--ink-primary)]">Where the money went</h3>
-          <p className="mb-3 text-xs text-[var(--ink-muted)]">{periodLabel}, largest first.</p>
-          {!overview || overview.topCategories.length === 0 ? (
-            <p className="py-4 text-sm text-[var(--ink-muted)]">{overview ? 'No expenses recorded this month.' : isLoading ? 'Loading…' : 'Not available right now.'}</p>
-          ) : (
-            <ul className="divide-y divide-[var(--border-subtle)]">
-              {overview.topCategories.map((entry) => (
-                <li key={entry.category} className="flex items-center justify-between gap-3 py-2.5 text-sm">
-                  <span className="truncate font-semibold text-[var(--ink-primary)]">{entry.category}</span>
-                  <span className="shrink-0 font-bold tabular-nums text-[var(--ink-primary)]">{money(entry.amountMinor)}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-        <Card className="p-5 sm:p-6">
-          <h3 className="text-base font-bold text-[var(--ink-primary)]">Clients and vendors</h3>
-          <p className="mb-3 text-xs text-[var(--ink-muted)]">{periodLabel}, from the client or vendor you add to a transaction.</p>
-          {!overview || overview.counterparties.length === 0 ? (
-            <p className="py-4 text-sm text-[var(--ink-muted)]">{overview ? 'Add a client or vendor to a transaction to see them here.' : isLoading ? 'Loading…' : 'Not available right now.'}</p>
-          ) : (
-            <ul className="divide-y divide-[var(--border-subtle)]">
-              {overview.counterparties.map((entry) => (
-                <li key={entry.name} className="flex items-center justify-between gap-3 py-2.5 text-sm">
-                  <span className="truncate font-semibold text-[var(--ink-primary)]">{entry.name}</span>
-                  <span className="shrink-0 text-right text-xs tabular-nums text-[var(--ink-secondary)]">
-                    {entry.receivedMinor > 0 && <span className="block font-bold text-[var(--accent-positive)]">+{money(entry.receivedMinor)}</span>}
-                    {entry.paidMinor > 0 && <span className="block font-bold">−{money(entry.paidMinor)}</span>}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
+      <div className="flex min-h-5 flex-wrap items-center justify-between gap-3">
+        <FreshnessNote updatedAt={figures.updatedAt} isRefreshing={figures.isRefreshing} refreshFailed={Boolean(figures.error)} onRetry={() => void figures.refresh()} />
+        <Button variant="primary" size="sm" onClick={openAddTransaction} leftIcon={<Plus className="h-4 w-4" />}>Add transaction</Button>
+        {overview && overview.otherCurrencies.length > 0 && (
+          <p className="text-xs text-[var(--ink-muted)]">Figures show {currency} only. Also recorded: {overview.otherCurrencies.map((entry) => `${formatMoney(entry.incomeMinor, entry.currency)} in, ${formatMoney(entry.expenseMinor, entry.currency)} out`).join('; ')}.</p>
+        )}
       </div>
 
-      <Card className="p-5 sm:p-6">
-        <div className="mb-2 flex items-center justify-between gap-3">
-          <h3 className="text-base font-bold text-[var(--ink-primary)]">Recent transactions</h3>
-          <Link href="/transactions" className="inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-deep-current)] hover:underline">See all<ArrowRight className="h-3.5 w-3.5" /></Link>
-        </div>
-        {isLoading ? (
-          <p role="status" className="py-6 text-center text-sm text-[var(--ink-muted)]">Loading transactions…</p>
-        ) : transactions.length === 0 ? (
-          <EmptyState icon={<Wallet className="w-6 h-6" />} title="No business transactions yet" description="These stay separate from your personal ledger." actionLabel="Add your first transaction" onAction={openAddTransaction} />
-        ) : (
-          <ul className="divide-y divide-[var(--border-subtle)]">
-            {transactions.map((tx) => (
-              <li key={tx.id} className="flex items-center justify-between gap-3 py-3">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-bold text-[var(--ink-primary)]">{tx.description || tx.counterparty || tx.category}</p>
-                  <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-[var(--ink-muted)]">
-                    <span>{tx.category} · {formatLedgerDate(tx.occurredAt)}</span>
-                    {tx.onChain?.verified && <Badge variant="success" className="text-[10px] font-semibold">Verified on Sui</Badge>}
-                  </p>
-                </div>
-                <p className={`shrink-0 text-sm font-extrabold tabular-nums ${tx.type === 'expense' ? 'text-[var(--ink-primary)]' : 'text-[var(--accent-positive)]'}`}>
-                  {tx.type === 'expense' ? '−' : '+'}{formatMoney(tx.amountMinor, tx.currency)}
+      <section aria-label={`${periodLabel} business totals`} className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <Card variant="blue" className="flex flex-col justify-between gap-6 lg:col-span-5">
+          <div>
+            <p className="text-xs font-medium text-[var(--ink-on-blue-muted)]">Profit in {periodLabel}</p>
+            {metrics
+              ? <p className="mt-1 text-4xl font-bold tracking-tight tabular-nums sm:text-5xl">{metrics.profitMinor < 0 ? '−' : ''}{money(Math.abs(metrics.profitMinor))}</p>
+              : figuresFailed ? <p className="mt-2 text-2xl font-bold">Unavailable</p> : <Skeleton className="mt-2 h-12 w-48 bg-white/20" />}
+            <p className="mt-1.5 text-xs text-[var(--ink-on-blue-muted)]">Revenue minus expenses you recorded. Not your accounting profit.</p>
+          </div>
+          <dl className="grid grid-cols-2 gap-3 border-t border-white/20 pt-4">
+            <div>
+              <dt className="text-xs text-[var(--ink-on-blue-muted)]">Revenue</dt>
+              <dd className="mt-0.5 text-lg font-semibold tabular-nums">{metrics ? money(metrics.revenueMinor) : '—'}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-[var(--ink-on-blue-muted)]">Expenses</dt>
+              <dd className="mt-0.5 text-lg font-semibold tabular-nums">{metrics ? money(metrics.expensesMinor) : '—'}</dd>
+            </div>
+          </dl>
+        </Card>
+
+        <Card className="lg:col-span-4">
+          <SectionHead title="Runway" />
+          <dl className="space-y-3">
+            <div>
+              <dt className="text-xs text-[var(--ink-secondary)]">Months left at this burn</dt>
+              <dd className={statClass}>{figuresFailed ? 'Unavailable' : !metrics ? <Skeleton className="h-8 w-32" /> : metrics.runwayTenths === null ? '—' : formatRunway(metrics.runwayTenths)}</dd>
+              <dd className="mt-0.5 text-xs text-[var(--ink-muted)]">
+                {!overview ? ' ' : metrics?.notBurning ? 'Not burning cash on these records.' : overview.cashMinor === null ? <button type="button" onClick={openCash} className="hit font-semibold text-[var(--brand-blue)] hover:underline cursor-pointer">Enter your cash to see this</button> : metrics?.burnMinor === null ? 'Record some transactions to see this.' : 'Cash divided by monthly burn, rounded down.'}
+              </dd>
+            </div>
+            <div className="grid grid-cols-2 gap-3 border-t border-[var(--border-subtle)] pt-3">
+              <div>
+                <dt className="text-xs text-[var(--ink-secondary)]">Monthly burn</dt>
+                <dd className="mt-0.5 text-sm font-semibold tabular-nums text-[var(--ink-primary)]">{!metrics || metrics.burnMinor === null ? '—' : money(metrics.burnMinor)}</dd>
+              </div>
+              <div>
+                <dt className="flex items-center gap-1 text-xs text-[var(--ink-secondary)]">
+                  Cash you hold
+                  <button type="button" onClick={openCash} aria-label="Edit cash figure" className="hit rounded-full p-0.5 text-[var(--ink-muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--ink-primary)] cursor-pointer"><EditPencil className="h-3 w-3" /></button>
+                </dt>
+                <dd className="mt-0.5 text-sm font-semibold tabular-nums text-[var(--ink-primary)]">{overview?.cashMinor === null || !overview ? '—' : money(overview.cashMinor)}</dd>
+              </div>
+            </div>
+            <dd className="text-xs text-[var(--ink-muted)]">{burnNote} Cash is a figure you enter; Memeora does not read your bank or wallet balance.</dd>
+          </dl>
+        </Card>
+
+        <Card className="flex flex-col lg:col-span-3">
+          <SectionHead title="Spend limit" href="/budgets" action={budget || limitFailed ? 'Manage' : 'Set limit'} />
+          {limitFailed ? <p className="text-xs text-[var(--ink-secondary)]">Unavailable until your figures load. Use Try again at the top of the page.</p> : !budgets.data || !metrics ? <Skeleton className="h-28 w-full" />
+            : limitUsed !== null ? (
+              <>
+                <UsageGauge percent={limitUsed} label="Spend limit" />
+                <p className="mt-3 text-center text-xs tabular-nums text-[var(--ink-secondary)]">
+                  {remainingLimit !== null && remainingLimit < 0 ? <span className="font-semibold text-[var(--accent-danger)]">Over by {money(-remainingLimit)}</span> : `${money(remainingLimit ?? 0)} left`}
                 </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
+              </>
+            ) : <p className="text-xs leading-relaxed text-[var(--ink-secondary)]">{budget ? `Your limit is in ${budget.currency}, while these figures are in ${currency}.` : 'Set a monthly limit to see how much is left.'}</p>}
+        </Card>
+      </section>
+
+      <section aria-label="Revenue and costs" className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <Card className="lg:col-span-7">
+          <SectionHead title="Last six months" />
+          {charts.error && !charts.data
+            ? <p className="py-10 text-center text-xs text-[var(--ink-secondary)]">Your chart could not be loaded. <button type="button" onClick={() => void charts.refresh()} className="font-semibold text-[var(--brand-blue)] underline cursor-pointer">Try again</button></p>
+            : <MonthBars data={charts.data} currency={currency} incomeLabel="Revenue" expenseLabel="Expenses" />}
+        </Card>
+        <Card className="lg:col-span-5">
+          <SectionHead title="Biggest costs" note={periodLabel} />
+          {charts.error && !charts.data
+            ? <p className="py-10 text-center text-xs text-[var(--ink-secondary)]">These figures could not be loaded. <button type="button" onClick={() => void charts.refresh()} className="font-semibold text-[var(--brand-blue)] underline cursor-pointer">Try again</button></p>
+            : <CategoryBars data={charts.data} currency={currency} />}
+        </Card>
+      </section>
+
+      <section aria-label="Clients, rules and activity" className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <Card className="lg:col-span-7">
+          <SectionHead title="Recent transactions" href={hasTransactions ? '/transactions' : undefined} action="See all" />
+          {ledger.isLoading ? <ListSkeleton rows={3} label="Loading transactions" />
+            : ledger.error && !ledger.data ? <p className="py-6 text-center text-xs text-[var(--ink-secondary)]">Transactions are unavailable right now. <button type="button" onClick={() => void ledger.refresh()} className="font-semibold text-[var(--brand-blue)] underline cursor-pointer">Try again</button></p>
+              : !hasTransactions ? <EmptyState icon={<Page className="h-6 w-6" />} title="No business transactions yet" description="These stay separate from your personal ledger." actionLabel="Add a transaction" onAction={openAddTransaction} />
+              : <ul className="divide-y divide-[var(--border-subtle)]">{transactions.map((tx) => <TxRow key={tx.id} tx={tx} />)}</ul>}
+        </Card>
+        <div className="flex flex-col gap-4 lg:col-span-5">
+          <RulesPanel memory={memory.data} isLoading={memory.isLoading} business />
+          <Card>
+            <SectionHead title="Clients and vendors" note={periodLabel} />
+            {figuresFailed ? <p className="text-xs text-[var(--ink-secondary)]">Unavailable until your figures load. Use Try again at the top of the page.</p> : !overview ? <Skeleton className="h-16 w-full" />
+              : overview.counterparties.length === 0 ? <p className="text-xs text-[var(--ink-secondary)]">Add a client or vendor to a transaction to see them here.</p>
+                : (
+                  <ul className="divide-y divide-[var(--border-subtle)]">
+                    {overview.counterparties.map((entry) => (
+                      <li key={entry.name} className="flex items-center justify-between gap-3 py-2 text-sm">
+                        <span className="truncate font-medium text-[var(--ink-primary)]">{entry.name}</span>
+                        <span className="shrink-0 text-right text-xs tabular-nums">
+                          {entry.receivedMinor > 0 && <span className="block font-semibold text-[var(--accent-positive)]">+{money(entry.receivedMinor)}</span>}
+                          {entry.paidMinor > 0 && <span className="block font-semibold text-[var(--ink-primary)]">−{money(entry.paidMinor)}</span>}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+          </Card>
+          <Card variant="accent" className="flex items-center justify-between gap-4">
+            <p className="min-w-0 text-sm font-bold text-[var(--ink-primary)]">Weighing a hire or a big cost?</p>
+            <Link href="/assistant"><Button variant="primary" size="sm" leftIcon={<Sparks className="h-3.5 w-3.5" />} rightIcon={<ArrowRight className="h-3.5 w-3.5" />}>Ask the Assistant</Button></Link>
+          </Card>
+        </div>
+      </section>
 
       <Modal isOpen={isCashOpen} onClose={() => setIsCashOpen(false)} title="Cash you hold" description="Used only to work out runway. Leave it empty to clear it.">
         <form onSubmit={saveCash} className="space-y-4">
           <div className="grid grid-cols-[1fr_6.5rem] gap-3">
             <Input label="Amount" type="number" inputMode="decimal" min="0" step="0.01" autoFocus placeholder="0.00" value={cashInput} onChange={(event) => setCashInput(event.target.value)} />
             <div className="space-y-1.5 text-left">
-              <label htmlFor="cash-currency" className="block text-xs font-bold text-[var(--ink-primary)]">Currency</label>
-              <select id="cash-currency" value={cashCurrency} onChange={(event) => setCashCurrency(event.target.value as Currency)} className="h-11 w-full rounded-xl border border-[var(--brand-sky-blue)]/70 bg-[var(--surface-card)] px-3.5 text-sm font-medium text-[var(--ink-primary)]">
+              <label htmlFor="cash-currency" className="block text-xs font-semibold text-[var(--ink-primary)]">Currency</label>
+              <select id="cash-currency" value={cashCurrency} onChange={(event) => setCashCurrency(event.target.value as Currency)} className="h-11 w-full rounded-[var(--radius-sm)] border border-[var(--border-field)] bg-[var(--surface-elevated)] px-3 text-sm text-[var(--ink-primary)]">
                 <option value="INR">INR ₹</option>
                 <option value="USD">USD $</option>
               </select>
@@ -292,9 +250,9 @@ export default function BusinessOverviewPage() {
           </div>
           <p className="text-xs leading-relaxed text-[var(--ink-muted)]">Your overview shows figures in this currency.</p>
           {cashError && <p role="alert" className="text-xs text-[var(--accent-danger)]">{cashError}</p>}
-          <div className="flex items-center justify-end gap-3 border-t border-[var(--border-subtle)] pt-3">
+          <div className="flex items-center justify-end gap-2 border-t border-[var(--border-subtle)] pt-3">
             <Button type="button" variant="ghost" onClick={() => setIsCashOpen(false)}>Cancel</Button>
-            <Button type="submit" variant="primary" size="pill" isLoading={isSavingCash}>Save</Button>
+            <Button type="submit" variant="primary" isLoading={isSavingCash}>Save cash figure</Button>
           </div>
         </form>
       </Modal>

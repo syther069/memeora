@@ -1,83 +1,65 @@
 'use client';
 
 import * as React from 'react';
-import { usePathname, useRouter } from 'next/navigation';
-import { Plus, LogOut } from 'lucide-react';
-import { useDAppKit } from '@mysten/dapp-kit-react';
+import { usePathname } from 'next/navigation';
+import { HelpCircle, Search } from 'iconoir-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/components/ui/toast';
 import { useAppSession } from '@/components/auth/app-session-guard';
-import { useLedger } from './ledger-provider';
+import { AccountMenu } from './account-menu';
+import { BrandMark } from './brand-mark';
 
 const routeTitles: Record<string, { title: string; subtitle: string }> = {
-  '/dashboard': { title: 'Overview', subtitle: 'Your month at a glance, and what to do next.' },
+  '/dashboard': { title: 'Overview', subtitle: 'Your month at a glance.' },
   '/personal': { title: 'Overview', subtitle: 'Your month at a glance, and what to do next.' },
   '/business': { title: 'Business overview', subtitle: 'Revenue, costs, burn and runway, from your own records.' },
   '/transactions': { title: 'Transactions', subtitle: 'Everything you have earned and spent.' },
-  '/budgets': { title: 'Budgets & Goals', subtitle: 'Your monthly spending limit and what you are saving for.' },
-  '/assistant': { title: 'Assistant', subtitle: 'Ask about your money. Exact sums from your ledger, guided by your memories.' },
-  '/memory': { title: 'Memory', subtitle: 'The rules and goals Memeora remembers for you, stored on Walrus.' },
+  '/budgets': { title: 'Budgets & goals', subtitle: 'Your monthly limit and what you are saving for.' },
+  '/assistant': { title: 'Assistant', subtitle: 'Exact sums from your ledger, guided by your memories.' },
+  '/memory': { title: 'Memory', subtitle: 'The rules and goals Memeora remembers, stored on Walrus.' },
   '/verification': { title: 'On-chain proof', subtitle: 'Check your memories on Sui Mainnet, read through Tatum.' },
 };
 
 const businessTitles: Record<string, { title: string; subtitle: string }> = {
   '/transactions': { title: 'Transactions', subtitle: 'Everything the business has earned and spent.' },
-  '/budgets': { title: 'Spend limit & goals', subtitle: 'Your monthly spend limit and what the business is working towards.' },
-  '/assistant': { title: 'Assistant', subtitle: 'Ask about the business. Exact sums from your ledger, guided by your business memories.' },
+  '/budgets': { title: 'Spend limit & goals', subtitle: 'Your monthly limit and what the business is working towards.' },
+  '/assistant': { title: 'Assistant', subtitle: 'Exact sums from your ledger, guided by your business memories.' },
   '/memory': { title: 'Business memory', subtitle: 'How you run the business, stored on Walrus apart from your personal memories.' },
   '/verification': { title: 'On-chain proof', subtitle: 'Check your business memories on Sui Mainnet, read through Tatum.' },
 };
 
-export function Header() {
+export function Header({ onOpenCommand, onOpenGuide }: { onOpenCommand: () => void; onOpenGuide: () => void }) {
   const pathname = usePathname();
-  const router = useRouter();
-  const { toast } = useToast();
-  const dAppKit = useDAppKit();
   const { walletAddress, mode } = useAppSession();
-  const { openAddTransaction } = useLedger();
-  const [isSigningOut, setIsSigningOut] = React.useState(false);
 
   const currentKey = Object.keys(routeTitles).find((key) => pathname === key || pathname.startsWith(`${key}/`)) ?? '/dashboard';
   const { title, subtitle } = (mode === 'business' && businessTitles[currentKey]) || routeTitles[currentKey];
-
-  const handleSignOut = async () => {
-    if (isSigningOut) return;
-    setIsSigningOut(true);
-    try {
-      // Revoke the Memeora session on the server first; that is what signs out.
-      const response = await fetch('/api/auth/logout', { method: 'POST' });
-      const result = await response.json();
-      if (!response.ok || result?.data?.signedOut !== true) throw new Error(result?.data?.message ?? 'Could not end the Memeora session.');
-      // After a page reload the wallet may not be connected in this tab; nothing to disconnect then.
-      await dAppKit.disconnectWallet().catch(() => undefined);
-      router.replace('/sign-in');
-      router.refresh();
-    } catch (cause) {
-      toast({ type: 'warning', title: 'Sign out failed', description: cause instanceof Error ? cause.message : 'Please try again.' });
-      setIsSigningOut(false);
-    }
-  };
+  const isMac = typeof navigator !== 'undefined' && /mac|iphone|ipad/i.test(navigator.platform);
 
   return (
-    <header className="h-20 border-b border-[var(--border-subtle)] bg-[var(--surface-card)]/90 backdrop-blur-md px-4 sm:px-8 flex items-center justify-between gap-3 sticky top-0 z-30">
-      <div className="min-w-0">
-        <h1 className="truncate text-xl sm:text-2xl font-extrabold tracking-tight text-[var(--ink-primary)]">{title}</h1>
-        <p className="hidden md:block truncate text-xs text-[var(--ink-muted)] font-medium mt-0.5">{subtitle}</p>
+    <header className="z-30 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 sm:sticky sm:top-0 sm:flex-nowrap bg-[var(--surface-base)] px-4 pb-3 pt-[calc(0.75rem+var(--safe-top))] sm:px-6 lg:px-8">
+      <div className="flex w-full min-w-0 items-center gap-3 sm:w-auto">
+        <BrandMark className="hidden h-9 w-9 sm:grid lg:hidden" />
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold tracking-tight text-[var(--ink-primary)] sm:text-2xl">{title}</h1>
+          <p className="hidden truncate text-xs text-[var(--ink-secondary)] md:block">{subtitle}</p>
+        </div>
       </div>
 
-      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-        {walletAddress && (
-          <Badge variant="pill-outline" className="hidden lg:inline-flex font-mono text-xs" title={walletAddress}>
-            {walletAddress.slice(0, 6)}…{walletAddress.slice(-4)}
-          </Badge>
-        )}
-        <Button variant="primary" size="pill" aria-label="Add transaction" onClick={openAddTransaction} leftIcon={<Plus className="w-4 h-4" />}>
-          <span className="hidden sm:inline">Add transaction</span>
+      <div className="ml-auto flex shrink-0 items-center gap-2">
+        <button
+          type="button"
+          onClick={onOpenCommand}
+          aria-label="Open command menu"
+          className="hit flex h-9 items-center gap-2 rounded-full border border-[var(--border-pill)] px-3 text-xs text-[var(--ink-secondary)] transition-colors hover:border-[var(--border-strong)] hover:bg-[var(--surface-hover)] cursor-pointer"
+        >
+          <Search aria-hidden className="h-3.5 w-3.5" />
+          <span className="hidden lg:inline">Search actions</span>
+          <kbd className="hidden rounded-md bg-[var(--surface-sunken)] px-1.5 py-0.5 font-sans text-[11px] font-medium lg:inline">{isMac ? '⌘K' : 'Ctrl K'}</kbd>
+        </button>
+        <Button variant="outline" size="sm" onClick={onOpenGuide} leftIcon={<HelpCircle aria-hidden className="h-4 w-4" />}>
+          Guide
         </Button>
-        <Button variant="outline" size="sm" aria-label="Sign out" disabled={isSigningOut} onClick={handleSignOut} leftIcon={<LogOut className="w-4 h-4" />}>
-          <span className="hidden sm:inline">{isSigningOut ? 'Signing out…' : 'Sign out'}</span>
-        </Button>
+        {walletAddress && <AccountMenu walletAddress={walletAddress} />}
       </div>
     </header>
   );

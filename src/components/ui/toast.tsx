@@ -1,96 +1,76 @@
 'use client';
 
 import * as React from 'react';
-import { CheckCircle2, AlertTriangle, Info, X } from 'lucide-react';
+import { CheckCircle, InfoCircle, WarningCircle, WarningTriangle, Xmark } from 'iconoir-react';
 import { cn } from '@/lib/utils';
 
-export interface ToastMessage {
-  id: string;
-  type: 'success' | 'warning' | 'info';
+export interface ToastOptions {
+  type: 'success' | 'warning' | 'info' | 'error';
   title: string;
   description?: string;
+  /** A short secondary action, such as Undo. */
+  action?: { label: string; onClick: () => void };
+  durationMs?: number;
+}
+
+interface ToastMessage extends ToastOptions {
+  id: string;
 }
 
 interface ToastContextType {
-  toast: (options: Omit<ToastMessage, 'id'>) => void;
+  toast: (options: ToastOptions) => string;
+  dismiss: (id: string) => void;
 }
 
 const ToastContext = React.createContext<ToastContextType | undefined>(undefined);
 
+const ICONS = {
+  success: { icon: CheckCircle, color: 'text-[var(--accent-positive)]' },
+  warning: { icon: WarningTriangle, color: 'text-[var(--accent-warning)]' },
+  error: { icon: WarningCircle, color: 'text-[var(--accent-danger)]' },
+  info: { icon: InfoCircle, color: 'text-[var(--brand-blue)]' },
+};
+
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = React.useState<ToastMessage[]>([]);
 
-  const toast = React.useCallback(
-    ({ type, title, description }: Omit<ToastMessage, 'id'>) => {
-      const id = `toast-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
-      setToasts((prev) => [...prev, { id, type, title, description }]);
-
-      setTimeout(() => {
-        setToasts((prev) => prev.filter((t) => t.id !== id));
-      }, 4000);
-    },
-    []
-  );
-
-  const removeToast = React.useCallback((id: string) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
+  const dismiss = React.useCallback((id: string) => {
+    setToasts((previous) => previous.filter((item) => item.id !== id));
   }, []);
 
+  const toast = React.useCallback((options: ToastOptions) => {
+    const id = `toast-${globalThis.crypto.randomUUID()}`;
+    setToasts((previous) => [...previous, { ...options, id }]);
+    setTimeout(() => dismiss(id), options.durationMs ?? 4000);
+    return id;
+  }, [dismiss]);
+
+  const value = React.useMemo(() => ({ toast, dismiss }), [toast, dismiss]);
+
   return (
-    <ToastContext.Provider value={{ toast }}>
+    <ToastContext.Provider value={value}>
       {children}
-      <div
-        aria-live="polite"
-        role="region"
-        aria-label="Notifications"
-        className="fixed bottom-20 lg:bottom-6 right-4 sm:right-6 z-50 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none"
-      >
-        {toasts.map((t) => {
+      <div aria-live="polite" role="region" aria-label="Notifications" className="fixed bottom-[calc(5.5rem+var(--safe-bottom))] lg:bottom-6 right-4 left-4 sm:left-auto sm:right-6 z-[60] flex flex-col gap-2 sm:w-96 pointer-events-none">
+        {toasts.map((item) => {
+          const { icon: Icon, color } = ICONS[item.type];
           return (
-            <div
-              key={t.id}
-              role="status"
-              className={cn(
-                'pointer-events-auto p-4 rounded-2xl border shadow-[var(--shadow-hero)] flex items-start gap-3 bg-white/95 backdrop-blur-md animate-in slide-in-from-bottom-3 duration-200 ring-1 ring-white/90 ring-inset',
-                t.type === 'success' && 'border-[var(--brand-sky-blue)]',
-                t.type === 'warning' && 'border-[var(--accent-warning-border)]',
-                t.type === 'info' && 'border-[var(--brand-sky-blue)]'
+            <div key={item.id} role="status" className="pointer-events-auto flex items-start gap-3 rounded-[var(--radius-md)] border border-[var(--border-card)] bg-[var(--surface-elevated)] p-3.5 shadow-[var(--shadow-hero)] [animation:page-enter_180ms_var(--ease-out)]">
+              <Icon aria-hidden className={cn('mt-0.5 h-4 w-4 shrink-0', color)} />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold leading-tight text-[var(--ink-primary)]">{item.title}</p>
+                {item.description && <p className="mt-0.5 break-words text-xs leading-relaxed text-[var(--ink-secondary)]">{item.description}</p>}
+              </div>
+              {item.action && (
+                <button
+                  type="button"
+                  onClick={() => { item.action?.onClick(); dismiss(item.id); }}
+                  className="hit shrink-0 rounded-full px-2 py-0.5 text-xs font-bold text-[var(--brand-blue)] hover:bg-[var(--surface-hover)] cursor-pointer"
+                >
+                  {item.action.label}
+                </button>
               )}
-            >
-              <div className="shrink-0 mt-0.5">
-                {t.type === 'success' && (
-                  <div className="w-6 h-6 rounded-full bg-[var(--accent-positive-bg)] text-[var(--accent-positive)] flex items-center justify-center">
-                    <CheckCircle2 className="w-4 h-4" />
-                  </div>
-                )}
-                {t.type === 'warning' && (
-                  <div className="w-6 h-6 rounded-full bg-[var(--accent-warning-bg)] text-[var(--accent-warning)] flex items-center justify-center">
-                    <AlertTriangle className="w-4 h-4" />
-                  </div>
-                )}
-                {t.type === 'info' && (
-                  <div className="w-6 h-6 rounded-full bg-[var(--surface-sky-solid)] text-[var(--brand-deep-current)] flex items-center justify-center">
-                    <Info className="w-4 h-4" />
-                  </div>
-                )}
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-[var(--ink-primary)] leading-tight">{t.title}</p>
-                {t.description && (
-                  <p className="text-[11px] text-[var(--ink-muted)] mt-0.5 leading-relaxed">
-                    {t.description}
-                  </p>
-                )}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => removeToast(t.id)}
-                aria-label="Dismiss notification"
-                className="p-1 rounded-full text-[var(--ink-muted)] hover:text-[var(--ink-primary)] hover:bg-[var(--surface-sky-tint)] transition-colors cursor-pointer"
-              >
-                <X className="w-3.5 h-3.5" />
+              <button type="button" onClick={() => dismiss(item.id)} aria-label="Dismiss notification" className="hit shrink-0 rounded-full p-0.5 text-[var(--ink-muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--ink-primary)] cursor-pointer">
+                <Xmark className="h-3.5 w-3.5" />
               </button>
             </div>
           );
@@ -102,9 +82,6 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
 export function useToast() {
   const context = React.useContext(ToastContext);
-  if (!context) {
-    throw new Error('useToast must be used within a ToastProvider');
-  }
+  if (!context) throw new Error('useToast must be used within a ToastProvider');
   return context;
 }
-

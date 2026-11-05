@@ -4,8 +4,9 @@ import * as React from 'react';
 import { Card, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { financeApi } from '@/lib/finance-api';
-import { CheckCircle2, ExternalLink, Info, ShieldCheck, XCircle } from 'lucide-react';
+import { CheckCircle, InfoCircle, OpenNewWindow, ShieldCheck, XmarkCircle } from 'iconoir-react';
 
 interface MemoryProof {
   memoryId: string;
@@ -87,11 +88,11 @@ export function MemoryProofs() {
       </div>
 
       {error && <p role="alert" className="text-xs text-[var(--accent-danger)]">{error}</p>}
-      {isChecking && <p role="status" className="text-xs text-[var(--ink-muted)]">Reading Sui Mainnet through Tatum…</p>}
+      {isChecking && <p role="status" className="flex items-center gap-2 text-xs text-[var(--ink-secondary)]"><Spinner size={14} className="text-[var(--brand-blue)]" />Reading Sui Mainnet through Tatum…</p>}
 
       {payload && !isChecking && (
-        <Card variant="default" className="overflow-hidden border border-[var(--brand-sky-blue)]/70">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-card)] bg-[var(--surface-sky-solid)] p-5 text-xs">
+        <Card className="p-0 sm:p-0">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-card)] bg-[var(--surface-tint)] p-5 text-xs">
             <div className="space-y-1">
               <p className="text-[var(--ink-muted)]">Namespace <code className="ml-1 break-all font-bold text-[var(--ink-primary)]">{payload.namespace}</code></p>
               {payload.account && (
@@ -102,7 +103,7 @@ export function MemoryProofs() {
               )}
             </div>
             {payload.status === 'checked' && (
-              <Badge variant={verifiedCount === payload.proofs.length ? 'success' : 'warning'} className="text-[10px] tabular-nums">
+              <Badge variant={verifiedCount === payload.proofs.length ? 'success' : 'warning'} className="text-xs tabular-nums">
                 {verifiedCount} of {payload.proofs.length} verified
               </Badge>
             )}
@@ -119,14 +120,14 @@ export function MemoryProofs() {
               <div key={proof.memoryId} className="space-y-3 p-5 text-xs">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <p className="max-w-xl font-semibold text-[var(--ink-primary)]">{proof.text ?? proof.blobId}</p>
-                  <Badge variant={PROOF_BADGE[proof.status].variant} className="shrink-0 text-[10px]">{PROOF_BADGE[proof.status].label}</Badge>
+                  <Badge variant={PROOF_BADGE[proof.status].variant} className="shrink-0 text-xs">{PROOF_BADGE[proof.status].label}</Badge>
                 </div>
                 <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
                   {CHECK_LABELS.filter(([key]) => proof.checks[key] !== null).map(([key, label]) => (
                     <li key={key} className="flex items-center gap-1.5 text-[var(--ink-secondary)]">
                       {proof.checks[key]
-                        ? <CheckCircle2 aria-hidden className="h-3.5 w-3.5 text-[var(--brand-deep-current)]" />
-                        : <XCircle aria-hidden className="h-3.5 w-3.5 text-[var(--accent-danger)]" />}
+                        ? <CheckCircle aria-hidden className="h-3.5 w-3.5 text-[var(--accent-positive)]" />
+                        : <XmarkCircle aria-hidden className="h-3.5 w-3.5 text-[var(--accent-danger)]" />}
                       <span>{label}<span className="sr-only">: {proof.checks[key] ? 'yes' : 'no'}</span></span>
                     </li>
                   ))}
@@ -135,13 +136,13 @@ export function MemoryProofs() {
                   <span>Walrus blob <code className="text-[var(--ink-primary)]">{short(proof.blobId)}</code></span>
                   {proof.certifiedEpoch !== null && <span>Certified at Walrus epoch {proof.certifiedEpoch} · stored until epoch {proof.storageEndEpoch ?? '—'}</span>}
                   {proof.suiObjectId && (
-                    <a className="inline-flex items-center gap-1 font-semibold text-[var(--brand-deep-current)] hover:underline" href={`${SUISCAN}/object/${proof.suiObjectId}`} target="_blank" rel="noopener noreferrer">
-                      Sui object {short(proof.suiObjectId)} <ExternalLink aria-hidden className="h-3 w-3" />
+                    <a className="inline-flex items-center gap-1 font-semibold text-[var(--brand-blue)] hover:underline" href={`${SUISCAN}/object/${proof.suiObjectId}`} target="_blank" rel="noopener noreferrer">
+                      Sui object {short(proof.suiObjectId)} <OpenNewWindow aria-hidden className="h-3 w-3" />
                     </a>
                   )}
                   {proof.transactionDigest && (
-                    <a className="inline-flex items-center gap-1 font-semibold text-[var(--brand-deep-current)] hover:underline" href={`${SUISCAN}/tx/${proof.transactionDigest}`} target="_blank" rel="noopener noreferrer">
-                      Last transaction {short(proof.transactionDigest)} <ExternalLink aria-hidden className="h-3 w-3" />
+                    <a className="inline-flex items-center gap-1 font-semibold text-[var(--brand-blue)] hover:underline" href={`${SUISCAN}/tx/${proof.transactionDigest}`} target="_blank" rel="noopener noreferrer">
+                      Last transaction {short(proof.transactionDigest)} <OpenNewWindow aria-hidden className="h-3 w-3" />
                     </a>
                   )}
                 </div>
@@ -152,8 +153,8 @@ export function MemoryProofs() {
             ))}
           </div>
 
-          <CardFooter className="items-start gap-2 border-t border-[var(--border-card)] bg-[var(--surface-card)] p-4 text-[11px] text-[var(--ink-secondary)]">
-            <Info aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-[var(--brand-deep-current)]" />
+          <CardFooter className="items-start gap-2 border-t border-[var(--border-card)] bg-[var(--surface-card)] p-4 text-xs text-[var(--ink-secondary)]">
+            <InfoCircle aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-[var(--brand-blue)]" />
             <span><strong>Scope:</strong> {payload.explanation.proves} {payload.explanation.doesNotProve}{payload.checkedAt ? ` Checked ${new Date(payload.checkedAt).toLocaleTimeString()}.` : ''}</span>
           </CardFooter>
         </Card>

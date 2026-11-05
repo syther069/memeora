@@ -1,11 +1,12 @@
 'use client';
 
 import * as React from 'react';
-import { AlertTriangle, ArrowDownRight, ArrowUpRight, RotateCcw, Search } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, Refresh, Search, WarningTriangle } from 'iconoir-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Modal } from '@/components/ui/modal';
+import { Spinner } from '@/components/ui/spinner';
 import { useAppSession } from '@/components/auth/app-session-guard';
 import { financeApi, formatMoney } from '@/lib/finance-api';
 import { formatLedgerDate } from '@/lib/dates';
@@ -152,7 +153,7 @@ export function ImportSuiDialog({ onClose, onImported }: {
     }
   };
 
-  const selectClass = 'h-9 w-full rounded-lg border border-[var(--brand-sky-blue)]/70 bg-[var(--surface-card)] px-2 text-xs font-medium text-[var(--ink-primary)]';
+  const selectClass = 'h-9 w-full rounded-[var(--radius-xs)] border border-[var(--border-field)] bg-[var(--surface-elevated)] px-2 text-xs text-[var(--ink-primary)]';
 
   return (
     <Modal isOpen onClose={onClose} className="max-w-2xl" title="Import from your Sui wallet" description={`Choose what belongs in your ${mode} ledger. Token, amount and date come from Sui Mainnet, read through Tatum.`}>
@@ -166,8 +167,8 @@ export function ImportSuiDialog({ onClose, onImported }: {
 
         {loadError && (
           <div role="alert" className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--accent-warning-border)] bg-[var(--accent-warning-bg)] p-3 text-xs text-[var(--accent-warning)]">
-            <span className="flex items-center gap-2"><AlertTriangle aria-hidden className="w-4 h-4 shrink-0" />{loadError}</span>
-            <Button type="button" variant="outline" size="sm" leftIcon={<RotateCcw className="w-3.5 h-3.5" />} onClick={() => void load()}>Try again</Button>
+            <span className="flex items-center gap-2"><WarningTriangle aria-hidden className="w-4 h-4 shrink-0" />{loadError}</span>
+            <Button type="button" variant="outline" size="sm" leftIcon={<Refresh className="w-3.5 h-3.5" />} onClick={() => void load()}>Try again</Button>
           </div>
         )}
 
@@ -188,31 +189,31 @@ export function ImportSuiDialog({ onClose, onImported }: {
               return (
                 <li key={key} className="space-y-2 p-3">
                   <label className={`flex items-start gap-3 ${canImport ? 'cursor-pointer' : ''}`}>
-                    <input type="checkbox" disabled={!canImport} checked={draft.selected} onChange={(event) => update(key, { selected: event.target.checked })} className="mt-1 accent-[var(--brand-deep-current)]" aria-label={`Import ${entry.amount ?? 'unknown amount'} ${entry.symbol ?? 'token'}`} />
+                    <input type="checkbox" disabled={!canImport} checked={draft.selected} onChange={(event) => update(key, { selected: event.target.checked })} className="mt-1 accent-[var(--brand-blue)]" aria-label={`Import ${entry.amount ?? 'unknown amount'} ${entry.symbol ?? 'token'}`} />
                     <span className="min-w-0 flex-1">
                       <span className="flex flex-wrap items-center gap-1.5 text-sm font-bold text-[var(--ink-primary)]">
-                        <Icon aria-hidden className={`h-4 w-4 ${isIncome ? 'text-[var(--accent-positive)]' : 'text-[var(--brand-deep-current)]'}`} />
+                        <Icon aria-hidden className={`h-4 w-4 ${isIncome ? 'text-[var(--accent-positive)]' : 'text-[var(--brand-blue)]'}`} />
                         {isIncome ? 'Received' : 'Sent'} {entry.amount ?? 'an unknown amount of'} {entry.symbol ?? 'an unknown token'}
-                        {entry.failed && <Badge variant="warning" className="text-[10px]">Failed, gas only</Badge>}
-                        {entry.importedIn && <Badge variant="sky" className="text-[10px]">Already in {entry.importedIn}</Badge>}
+                        {entry.failed && <Badge variant="warning" className="text-xs">Failed, gas only</Badge>}
+                        {entry.importedIn && <Badge variant="sky" className="text-xs">Already in {entry.importedIn}</Badge>}
                       </span>
-                      <span className="mt-0.5 block font-mono text-[11px] text-[var(--ink-muted)]">{formatLedgerDate(entry.occurredAt)} · {shortHash(entry.digest)}</span>
-                      {!entry.symbol && <span className="mt-0.5 block text-[11px] text-[var(--ink-muted)]">Sui has no details for this token, so it cannot be added.</span>}
+                      <span className="mt-0.5 block font-mono text-xs text-[var(--ink-muted)]">{formatLedgerDate(entry.occurredAt)} · {shortHash(entry.digest)}</span>
+                      {!entry.symbol && <span className="mt-0.5 block text-xs text-[var(--ink-muted)]">Sui has no details for this token, so it cannot be added.</span>}
                     </span>
                   </label>
                   {draft.selected && (
                     <div className="grid grid-cols-2 gap-2 pl-7">
-                      <label className="space-y-1 text-[11px] font-bold text-[var(--ink-primary)]">
+                      <label className="space-y-1 text-xs font-bold text-[var(--ink-primary)]">
                         Category
                         <select value={draft.category} onChange={(event) => update(key, { category: event.target.value })} className={selectClass}>
                           {categoriesFor(mode, entry.direction, true).map((category) => <option key={category} value={category}>{category}</option>)}
                         </select>
                       </label>
-                      <label className="space-y-1 text-[11px] font-bold text-[var(--ink-primary)]">
+                      <label className="space-y-1 text-xs font-bold text-[var(--ink-primary)]">
                         Value in {preferredCurrency}
                         <input type="number" inputMode="decimal" min="0.01" step="0.01" value={draft.value} onChange={(event) => update(key, { value: event.target.value })} placeholder="0.00" className={selectClass} />
                       </label>
-                      <p className="col-span-2 text-[11px] leading-relaxed text-[var(--ink-muted)]">
+                      <p className="col-span-2 text-xs leading-relaxed text-[var(--ink-muted)]">
                         {entry.suggestedMinor === null
                           ? 'No suggested value: Memeora has no price for this token, or the amount is under one cent. Enter what it was worth to you.'
                           : suggestion
@@ -229,12 +230,12 @@ export function ImportSuiDialog({ onClose, onImported }: {
           </ul>
         )}
 
-        {isLoading && <p role="status" className="text-center text-xs text-[var(--ink-muted)]">Reading Sui Mainnet…</p>}
+        {isLoading && <p role="status" className="flex items-center justify-center gap-2 text-xs text-[var(--ink-secondary)]"><Spinner size={14} className="text-[var(--brand-blue)]" />Reading Sui Mainnet…</p>}
         {nextCursor && !isLoading && (
           <div className="text-center"><Button type="button" variant="ghost" size="sm" onClick={() => void load(nextCursor)}>Show older transactions</Button></div>
         )}
         {!nextCursor && !isLoading && !loadError && (
-          <p className="text-center text-[11px] text-[var(--ink-muted)]">That is as far back as this Sui node keeps. Much older transactions may not be available here.</p>
+          <p className="text-center text-xs text-[var(--ink-muted)]">That is as far back as this Sui node keeps. Much older transactions may not be available here.</p>
         )}
         {saveError && <p role="alert" className="text-xs text-[var(--accent-danger)]">{saveError}</p>}
 

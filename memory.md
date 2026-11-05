@@ -1689,3 +1689,75 @@ Switch stays on the page and reloads; Business transaction absent from Personal;
 - User imported the delete refund into Business: 0.005188922 SUI, "Verified on Sui", +₹0.45, tx `HsgXhDJUw363o48uUX2FMxdXj3GHtDwv2YfZqbYjXbb7` (Sui shows +5,188,922 MIST).
 - Note: the row's category is `Client revenue`, the dialog's default for received crypto. A default of revenue overstates business income if left unchanged.
 - Not clicked in a browser yet: CSV download, "Remember this". 10 seeded memories not re-checked.
+
+### 2026-11-05 — Full UI/UX Redesign: Royal Blue and Cream, Space Grotesk
+
+**Status:** implemented and checked on desktop and phone with a throwaway wallet (removed afterwards). No wallet-signing flow was re-run with Slush after the redesign: setup, delete and the real Sui import are unchanged in logic, restyled only.
+
+#### Design
+- Palette `#014BAA` and `#F8F3F0` in centralized tokens; `design.md` rewritten to match. Tokens renamed across `src`. Space Grotesk from `C:/near/Space_Grotesk.zip` in `public/fonts` with its OFL (Roboto removed); confirmed loaded via `document.fonts`, has `tnum` and the rupee sign.
+- Blue rail, cream canvas, flat cards. Signature: hatched data bars, and the "Rules the Assistant follows" panel.
+- New overview layouts for Personal and Business with a six-month chart, categories and a usage gauge, all real data. Sign-in redesigned. Custom `not-found`, `error`, `(app)/error`, `global-error`.
+- Reference used as layout inspiration only: no branding, images or exact screens copied.
+
+#### Behaviour added
+- Command menu (Ctrl/Cmd K), `N` shortcut. Undo toast for deleting a transaction and hiding a memory (`useUndoable`, sends on window close or page exit). Optimistic memory switch and goal pause, rolled back on failure. Cached figures with `FreshnessNote` (`useFinanceResource`, in memory, cleared on sign-out). Bottom sheets with swipe-down dismiss and focus trap. Safe areas, `dvh`, `interactive-widget`. Dual spinner via `loading-dev@0.3.6` (source inspected: MIT, no install scripts). Skeletons. `React.ViewTransition` on route changes. `.hit` touch areas. Squircle corners where supported.
+
+#### Backend changes (additive)
+- Migration `0009_idempotency_keys.sql`, applied to Neon (RLS forced, grants confirmed). `Idempotency-Key` honoured on `POST /api/transactions` and on create-goal and contribute-goal in `POST /api/budgets`, claimed in the write's own transaction. `financeApi` retries once on a network drop when a key is set.
+- `GET /api/overview` (months and categories, per mode). `GET /api/memory` now also returns `recent` (3).
+
+#### Checked with real input (throwaway wallet)
+Mode switch; figures reconcile (₹85,000 − ₹18,000 = ₹67,000; 60% gauge); Ctrl+K, arrows, Enter; delete commits on the server after the window; Undo leaves the row on the server (Undo itself clicked by script, because the window can expire between tool calls); swipe dismiss; `N`, autofocus, typing, save writes once, Personal only; figures refresh to ₹66,749.25; 404 page with a real 404 status; phone width with no sideways scroll. Sign out was clicked by the user in the pane; session revoked in Neon.
+
+#### Not verified in the browser
+Goal pause, add money and memory hide/undo paths after the redesign (route tests cover the server side; the UI code paths were not clicked). CSV download. `error.tsx` screens (not forced). Sign-in connect with a real wallet. Accessibility was not audited with a screen reader.
+
+#### Not applicable or not done from the brief
+- One-time-code entry, blurred image placeholders, hover submenus: the app has no such fields, images or menus.
+- Predictive back: left to the browser; no custom handling.
+- Skills: none installed; used the repo's `design-taste-frontend` and `design.md`.
+- Sources: motion-primitives returned 403; Watermelon's page has no extractable source; Skiper, Navbar Gallery and Footer Design were not fetched. No component code was copied from them. The command menu and sheet are written here, not taken from cmdk or shadcn.
+- Known: received crypto still defaults to the first category (Client revenue in Business).
+
+#### Commands
+- `npm run typecheck`: exit 0
+- `npm run lint`: exit 0
+- `npx vitest run`: exit 0, 26 files, 187 tests
+- `npm run build`: exit 0
+
+Nothing committed.
+
+### 2026-11-05 — Navbar, Slide Guide and Iconoir
+
+- **Navbar:** Guide, wallet address (copies only) and Sign out are separate buttons. Add transaction moved out of the navbar to the Transactions page and both overviews; the N key and command menu still work.
+- **Guide:** `src/components/guide/guide-dialog.tsx`, 8 slides using the existing Modal. Screens in `public/guide/` come from a throwaway wallet with sample data, since deleted from Neon. Its sample memories were inserted without a blob, so they show "Stored on Walrus" without a real write; the caption says so. Replace these captures with real-memory ones if wanted.
+- **Icons:** all Lucide UI icons replaced with `iconoir-react@7.12.2`; `lucide-react` uninstalled, no match in src, tests, package.json or package-lock.json.
+- **Bug found by testing:** Button's 500 ms double-submit guard dropped fast Next clicks. Added opt-in `allowRepeatClicks`, used only by the guide; every other button keeps the guard.
+- **Browser checks (headless Edge, real input, 25 checks, all passed):** navbar actions, slide navigation, arrow keys, focus trap, Escape, focus return, close button, command menu, 375 px layout. Run before the final scroll-to-top edit in `goTo`'s effect; that last edit has typecheck, lint, tests and build only, not a browser run, because the demo wallet was already deleted.
+- **Noted:** the dev "1 Issue" badge is Slush's SDK failing its metadata fetch on CORS from localhost. Unrelated to this work, not changed.
+- **Commands:** `npm run typecheck` exit 0; `npm run lint` exit 0; `npx vitest run` exit 0; `npm run build` exit 0.
+- **Integration status:** unchanged by this work. No Walrus writes were made.
+- **Next:** the user tests the guide and navbar with their own wallet. Nothing committed.
+
+### 2026-11-05 — UI and UX Guides Applied; Wallet and Sign Out Merged
+
+- **Correction:** the previous entry's work was done without reading `UI (2).md` and `UX (2).md`, which `design.md` requires. Both have now been read, except their source lists and evidence notes (UI section 27; UX sections 16 to 18). `Design-Quality-Codex.pdf`, the checklist and security PDFs, and the `design-taste-frontend` skill are still unread.
+- **User decision:** wallet address and Sign out are one button (`src/components/layout/account-menu.tsx`). It shows the address and opens Copy address and Sign out. This replaces the "separate buttons" wording in the earlier brief.
+- **Fixed against the guides:** header hit areas overlapped; field borders 1.38:1 raised to at least 3:1 with `--border-field`; income chart bars 1.57:1 given an edge; disabled button opacity raised; Guide labelled on phones; long page titles no longer cut off; Add transaction moved into the first view; transaction row actions labelled, and Remember restored on phones; selected filters given a check mark; filters wrap instead of scrolling sideways; Assistant Copy no longer hover-only on touch; `transition-all` removed; uppercase eyebrow removed; 10px status text raised; forced-colors fill for chart marks; guide image failure state.
+- **Browser checks:** `agent-browser` 0.41.2 (installed globally, skill added to `.agents/skills`), Chrome headless, 33 of 33 passed: account menu, copy, Escape and focus return, guide navigation, row labels, hit areas, no sideways scroll on 7 pages at 375 px and on `/personal` at 320 px, sign out. An earlier run on the sign-in page was discarded as invalid.
+- **Commands:** `npm run typecheck` exit 0; `npm run lint` exit 0; `npx vitest run` exit 1 with the dev server running (3 suites hit the 10 s hook timeout), then exit 0 with it stopped, 26 files and 187 tests passed; `npm run build` exit 0.
+- **Not tested:** screen reader speech, forced-colors rendering, Safari and Firefox, physical touch devices, 200% text zoom, the user's own wallet.
+- **Known gaps:** six-month chart figures are only in a screen-reader table and hover title, with no visible numbers; reduced motion still uses the global near-zero duration rule; other pages' empty, partial and error states were not re-audited one by one. Guide screenshots again use a deleted throwaway wallet whose sample memories were not written to Walrus; the caption says so.
+- **Integration status:** unchanged. No Walrus writes. Nothing committed.
+
+### 2026-11-05 — UI and UX Gaps Closed: States, Motion, Chart Figures
+
+- **Chart:** six-month figures are now a visible "See the figures" table, not screen-reader only.
+- **Reduced motion:** the blanket near-zero duration rule is replaced by named treatments in `globals.css`; colour and focus changes stay.
+- **False states fixed:** Business showed "No business transactions yet" when the load failed; overview sections kept skeletons forever after a failure; Assistant said "Answer copied" even if copying failed; "You seem to be offline" appeared while the browser was online; "Check your connection" named an unproven cause; proof page showed raw gateway or fetch errors; a failed Walrus sync on Memory was silent; "Set budget" appeared when the budget had only failed to load. Load-error Try again now shows progress.
+- **High contrast:** income outlined, spent solid, current page and workspace outlined, buttons keep edges.
+- **Browser checks (agent-browser 0.41.2 plus headless Edge for forced colors), on a throwaway wallet since deleted:** blocked `/api/overview`, `/api/budgets`, `/api/transactions`, `/api/verification`, `/api/memory/recall` one at a time; retry recovery; filter no-match keeps query; reduced motion; 7 pages at 640x400 (standing in for 200% zoom); WCAG text-spacing override on 6 pages at 375 px. All passed after fixes. High contrast reviewed by screenshot on `/personal` only.
+- **Commands:** `npm run typecheck`, `npm run lint`, `npx vitest run`, `npm run build`; exit codes reported to the user this turn (all 0, server stopped).
+- **Not tested:** screen reader speech, Safari, Firefox, physical phones, the user's own wallet. `Design-Quality-Codex.pdf`, the checklist and security PDFs and the `design-taste-frontend` skill remain unread.
+- **Integration status:** unchanged. No Walrus writes. Nothing committed.

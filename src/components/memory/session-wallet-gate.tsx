@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Wallet } from 'lucide-react';
+import { Wallet } from 'iconoir-react';
 import { Button } from '@/components/ui/button';
 import { isWalletRejection, useSessionWallet } from '@/lib/wallet/use-session-wallet';
 

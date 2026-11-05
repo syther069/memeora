@@ -59,24 +59,18 @@ Memeora helps consumers understand and manage personal finances through transact
 
 Design for confidence and comprehension. Put the most useful financial answer near the top of each view, explain its period and currency, and make the next useful action easy to find. Avoid urgency, shame, and promises of financial outcomes.
 
-The default is **light-first** and uses the approved blue palette. It supersedes the earlier dark-first emerald, cyan, and violet direction. A dark appearance can be considered separately if it keeps the same identity and meets contrast requirements.
+The default is **light-first**: a cream canvas with royal blue for the brand. A dark appearance can be considered separately if it keeps the same identity and meets contrast requirements.
 
-## 3. Palette and 60/30/20 weighting
-
-Use the **Memeora Clear Current** palette:
+## 3. Palette and 60/40 balance
 
 | Name | Hex | Role |
 |---|---|---|
-| Deep Current | `#0D47A1` | Readable ink, headings, high-priority controls, data emphasis |
-| Bright Current | `#2196F3` | Selective interaction emphasis, links, selected states, data series |
-| Sky Blue | `#90CAF9` | Supporting surfaces, progress, and chart context |
-| Cloud Blue | `#E3F2FD` | Main canvas and quiet background areas |
+| Light Cream | `#F8F3F0` | Main canvas, about 60% of the visible area with its card surfaces |
+| Royal Blue | `#014BAA` | Navigation rail, primary actions, hero figures, data marks, about 40% |
 
-Apply the requested **60/30/20 rule as a 6:3:2 weighting**: Cloud Blue/base first, Sky Blue/secondary surfaces second, Bright Current/strong accents third. Since 60 + 30 + 20 is 110, normalize those weights for exclusive visible-area estimates to about **55% / 27% / 18%**. Treat these as directional targets, not exact pixel quotas. Deep Current is the ink and contrast anchor; do not count ordinary text as accent coverage.
+Tints and shades of these two live in `src/app/globals.css` as tokens (`--brand-blue-*`, `--surface-*`, `--ink-*`). Use tokens, not hex values. Status colors are separate and always come with a label: positive `--accent-positive`, warning `--accent-warning`, danger `--accent-danger`. Check real foreground and background pairs against WCAG AA at actual sizes.
 
-Keep Bright Current selective, not decorative on every panel. Use Sky Blue for supporting emphasis rather than body text. Use Deep Current for readable small text and high-priority controls. White or near-white neutral content surfaces are allowed where they improve hierarchy. Check real foreground/background combinations at actual sizes and states against WCAG AA; do not assume Bright Current or Sky Blue supports small white text.
-
-Wine red and sand are supplemental colors and do not replace Clear Current. Keep wine red restrained and reserve it for a clear semantic need. Sand is a supporting surface, never low-contrast text. Their hex values have not been approved: do not invent values or add tokens until exact colors are provided or verified in project assets.
+**Signature:** data is drawn with a diagonal hatch (`--hatch-blue`, `--hatch-soft`), like ruling in a ledger. It belongs on data marks only, not on decoration. The overview's "Rules the Assistant follows" panel is the element only this product has; keep it visible.
 
 ## 4. Layout, type, and surfaces
 
@@ -84,11 +78,11 @@ Wine red and sand are supplemental colors and do not replace Clear Current. Keep
 - Choose one clear primary navigation model and use it consistently.
 - Design desktop and mobile intentionally. Recompose content for smaller screens instead of shrinking the desktop layout.
 - Use a restrained type system with clear roles for headings, labels, body text, and financial figures. Use tabular numerals for comparable amounts and align numeric columns consistently.
-- Load the user-approved Roboto variable font from `public/fonts/Roboto-VariableFont_wdth,wght.ttf`, retain its OFL license, and verify it in the rendered interface. Do not claim it is loaded unless the local asset is wired into the app.
+- Load the user-supplied Space Grotesk variable font from `public/fonts/SpaceGrotesk-VariableFont_wght.ttf`, retain its OFL license (`SpaceGrotesk-OFL.txt`), and verify it in the rendered interface. Its weights run 300 to 700. It has real tabular figures (`tnum`) and the rupee sign.
 - Label financial values with their currency and period; explain comparisons and baselines in words.
 - Prefer borders and layout hierarchy over heavy shadows and nested cards. Use spacing and subtle tone steps to group content; reserve shadows for floating elements such as menus and dialogs.
 - Use cards only when they group related information or actions. Avoid isolated tiles for every metric.
-- Keep navigation visually quiet. Do not use a saturated dark sidebar on the light-first interface.
+- The navigation rail is solid royal blue, and the active item is a cream pill. It is the one large blue surface besides each screen's hero figure; other cards stay flat cream-white with a 1px line.
 - Build a product-specific identity from Memeora's mark, finance vocabulary, and real user tasks. Avoid stock dashboard arrangements, decorative gradients, glows, glass effects, and ornamental icon boxes.
 - Do not add decorative UI just to fill empty space; use open space intentionally.
 
@@ -99,7 +93,7 @@ Wine red and sand are supplemental colors and do not replace Clear Current. Keep
 - Ensure totals, deltas, budget utilization, and savings progress use consistent source values and deterministic domain calculations. Show currency and period.
 - Use color to communicate meaning, not decoration. Label chart units and periods and provide a text or table alternative where useful. Do not rely on green/red alone.
 - Distinguish a positive cash-flow result from a financial recommendation. A purchase fitting a recorded budget does not by itself mean it is advisable.
-- Do not claim Walrus Memory is active, a Mainnet write succeeded, or Tatum verified data unless current implementation and evidence confirm it. Project notes previously recorded both integrations as **NOT STARTED**; re-check `memory.md` before using live-status labels.
+- Do not claim Walrus Memory is active, a Mainnet write succeeded, or Tatum verified data unless current implementation and evidence confirm it. Re-check `memory.md` before using live-status labels.
 
 ## 6. Functional implementation rules
 
@@ -133,6 +127,9 @@ Wine red and sand are supplemental colors and do not replace Clear Current. Keep
 - Do not treat indexer/database results as confirmed chain state when a direct critical-state read is required.
 - A retry must not silently duplicate an on-chain action.
 - External links, explorer links, and contract addresses must come from verified configuration or genuine returned data.
+- Reversible actions apply at once and offer Undo in a toast (`useUndoable`); the server is told when the window closes or the page goes away. Irreversible ones get a dialog. Retryable writes send an `Idempotency-Key`.
+- Cached figures stay on screen while refreshing (`useFinanceResource`), with `FreshnessNote` stating how old they are.
+- Use the dual spinner from `loading-dev` through `components/ui/spinner.tsx`, and skeletons shaped like the content while it loads.
 - Use motion sparingly to clarify state changes. Respect `prefers-reduced-motion`; never use animation to disguise waiting, uncertainty, or failure.
 
 ## 9. Working protocol
@@ -154,7 +151,7 @@ Do not begin broad refactors when the user asked only for a plan. Do not modify 
 A UI change is ready for review when:
 
 - It follows this guide and uses centralized design tokens.
-- The user-approved Roboto variable font is genuinely loaded from the local licensed asset.
+- Space Grotesk is genuinely loaded from the local licensed asset.
 - Every visible control behaves as presented.
 - No fake financial or on-chain data is shown as real.
 - Settlement state and transaction status are honest.

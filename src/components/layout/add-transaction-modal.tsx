@@ -5,9 +5,9 @@ import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAppSession } from '@/components/auth/app-session-guard';
-import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight } from 'iconoir-react';
 import { cn } from '@/lib/utils';
-import { financeApi, type ApiTransaction } from '@/lib/finance-api';
+import { createIdempotencyKeys, financeApi, type ApiTransaction } from '@/lib/finance-api';
 import { dateInputToOccurredAt, localDateInput, occurredAtToDateInput } from '@/lib/dates';
 import { categoriesFor } from '@/modules/finance/domain/categories';
 import { parseMajorUnitsToMinor } from '@/modules/finance/domain/money';
@@ -42,6 +42,7 @@ export function AddTransactionModal({ transaction, onClose, onSaved }: AddTransa
   const [reference, setReference] = React.useState(transaction?.reference ?? '');
   const [error, setError] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const idempotencyKeys = React.useRef(createIdempotencyKeys());
 
   // Keep a saved category that is no longer in the default list selectable when editing.
   const baseCategories = categoriesFor(mode, type, Boolean(onChain));
@@ -63,18 +64,21 @@ export function AddTransactionModal({ transaction, onClose, onSaved }: AddTransa
     setError(null);
     setIsSubmitting(true);
     try {
+      const body = JSON.stringify({
+        type,
+        amountMinor,
+        currency,
+        category,
+        description: description.trim(),
+        occurredAt: dateInputToOccurredAt(date),
+        counterparty: counterparty.trim() || null,
+        reference: reference.trim() || null,
+      });
       await financeApi(transaction ? `/api/transactions/${encodeURIComponent(transaction.id)}` : '/api/transactions', {
         method: transaction ? 'PATCH' : 'POST',
-        body: JSON.stringify({
-          type,
-          amountMinor,
-          currency,
-          category,
-          description: description.trim(),
-          occurredAt: dateInputToOccurredAt(date),
-          counterparty: counterparty.trim() || null,
-          reference: reference.trim() || null,
-        }),
+        body,
+        // A retry of a new entry after a dropped connection must not add it twice.
+        ...(transaction ? {} : { idempotencyKey: idempotencyKeys.current(body) }),
       });
       onSaved({ type, amountMinor, currency, category }, Boolean(transaction));
     } catch (submitError) {
@@ -83,7 +87,7 @@ export function AddTransactionModal({ transaction, onClose, onSaved }: AddTransa
     }
   };
 
-  const selectClass = 'w-full bg-[var(--surface-card)] border border-[var(--brand-sky-blue)]/70 rounded-xl text-sm text-[var(--ink-primary)] h-11 px-3.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-bright-current)] font-medium';
+  const selectClass = 'w-full bg-[var(--surface-elevated)] border border-[var(--border-field)] rounded-[var(--radius-sm)] text-sm text-[var(--ink-primary)] h-11 px-3 hover:border-[var(--border-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-blue)]';
 
   return (
     <Modal
@@ -94,13 +98,13 @@ export function AddTransactionModal({ transaction, onClose, onSaved }: AddTransa
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {onChain && (
-          <div className="rounded-xl border border-[var(--brand-sky-blue)]/70 bg-[var(--surface-sky-solid)] p-3 text-xs leading-relaxed text-[var(--ink-secondary)]">
+          <div className="rounded-xl border border-[var(--brand-blue-soft)]/70 bg-[var(--surface-tint)] p-3 text-xs leading-relaxed text-[var(--ink-secondary)]">
             <p className="font-bold text-[var(--ink-primary)]">{onChain.assetAmount} {onChain.assetSymbol} on {onChain.chain}</p>
             <p className="mt-0.5 break-all font-mono text-[11px]">{onChain.txHash}</p>
             <p className="mt-1">{chainFactsLocked ? 'Verified on Sui, so direction and date stay as the chain recorded them. You can change the value below.' : 'Not verified, added by you.'}</p>
           </div>
         )}
-        <div role="group" aria-label="Transaction type" className="grid grid-cols-2 gap-2 p-1 bg-[var(--surface-cloud-solid)] rounded-full border border-[var(--brand-sky-blue)]/60 shadow-inner">
+        <div role="group" aria-label="Transaction type" className="grid grid-cols-2 gap-1 p-1 bg-[var(--surface-sunken)] rounded-full">
           {(['expense', 'income'] as const).map((option) => {
             const Icon = option === 'expense' ? ArrowDownRight : ArrowUpRight;
             return (
@@ -111,9 +115,9 @@ export function AddTransactionModal({ transaction, onClose, onSaved }: AddTransa
                 disabled={chainFactsLocked}
                 onClick={() => chooseType(option)}
                 className={cn(
-                  'disabled:cursor-not-allowed flex items-center justify-center gap-2 py-2 rounded-full text-xs font-bold capitalize transition-all cursor-pointer',
+                  'disabled:cursor-not-allowed flex items-center justify-center gap-2 py-2 rounded-full text-xs font-bold capitalize transition-colors cursor-pointer',
                   type === option
-                    ? option === 'expense' ? 'bg-[var(--brand-deep-current)] text-white shadow-xs' : 'bg-[var(--accent-positive)] text-white shadow-xs'
+                    ? option === 'expense' ? 'bg-[var(--brand-blue)] text-[var(--ink-inverse)]' : 'bg-[var(--accent-positive)] text-[var(--ink-inverse)]'
                     : 'text-[var(--ink-muted)] hover:text-[var(--ink-primary)]'
                 )}
               >

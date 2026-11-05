@@ -8,6 +8,10 @@ export function setFinanceApiMode(mode: AppMode) {
   activeMode = mode;
 }
 
+export function getFinanceApiMode(): AppMode {
+  return activeMode;
+}
+
 export function financeApiHeaders(): Record<string, string> {
   return { [APP_MODE_HEADER]: activeMode };
 }
@@ -73,21 +77,43 @@ export class FinanceApiError extends Error {
   }
 }
 
-export async function financeApi<T>(path: string, init?: RequestInit): Promise<T> {
+/** A key for one logical write: the same content gets the same key, so a retry cannot duplicate it. */
+export function createIdempotencyKeys() {
+  let last: { body: string; key: string } | null = null;
+  return (body: string) => {
+    if (last?.body !== body) last = { body, key: globalThis.crypto.randomUUID() };
+    return last.key;
+  };
+}
+
+export interface FinanceApiInit extends RequestInit {
+  /** Makes this write safe to repeat, and retries it once if the network drops. */
+  idempotencyKey?: string;
+}
+
+export async function financeApi<T>(path: string, init?: FinanceApiInit): Promise<T> {
+  const { idempotencyKey, ...requestInit } = init ?? {};
+  const send = () => fetch(path, {
+    ...requestInit,
+    headers: {
+      ...financeApiHeaders(),
+      ...Object.fromEntries(new Headers(requestInit.headers).entries()),
+      ...(requestInit.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
+    },
+    cache: 'no-store',
+  });
 
   let response: Response;
   try {
-    response = await fetch(path, {
-      ...init,
-      headers: {
-        ...Object.fromEntries(new Headers(init?.headers).entries()),
-        ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
-        ...financeApiHeaders(),
-      },
-      cache: 'no-store',
-    });
+    try {
+      response = await send();
+    } catch (cause) {
+      if (!idempotencyKey) throw cause;
+      response = await send();
+    }
   } catch {
-    throw new FinanceApiError('Memeora could not reach the finance service. Check your connection and retry.', true);
+    throw new FinanceApiError('Memeora could not reach the server. Your saved records are not affected. Please try again.', true);
   }
 
   let payload: { success?: boolean; data?: T; error?: { message?: string } };

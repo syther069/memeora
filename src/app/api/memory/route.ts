@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
         consentEnabled,
         total: memories.length,
         storedOnWalrus: memories.filter((m) => m.status === 'confirmed').length,
+        recent: memories.slice(0, 3).map((m) => ({ id: m.id, text: m.text, category: m.category, status: m.status })),
       };
     });
     return jsonSuccess(summary);

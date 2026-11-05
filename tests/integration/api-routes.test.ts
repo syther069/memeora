@@ -249,7 +249,7 @@ describe('API routes with verified wallet sessions on PostgreSQL', () => {
     it('keep memories visible and removable after memory is turned off, and report status without Walrus', async () => {
       const keypair = new Ed25519Keypair();
       const cookie = await signIn(keypair);
-      expect((await (await memorySummaryRoute(getRequest('/api/memory', cookie))).json()).data).toEqual({ consentEnabled: false, total: 0, storedOnWalrus: 0 });
+      expect((await (await memorySummaryRoute(getRequest('/api/memory', cookie))).json()).data).toMatchObject({ consentEnabled: false, total: 0, storedOnWalrus: 0 });
       await consentPut(jsonRequest('PUT', '/api/memory/consent', { enabled: true }, cookie));
       await insertMemory(db.instance!, keypair.toSuiAddress(), 'Save for a new laptop');
       await consentPut(jsonRequest('PUT', '/api/memory/consent', { enabled: false }, cookie));
@@ -257,7 +257,7 @@ describe('API routes with verified wallet sessions on PostgreSQL', () => {
       const page = (await (await recallRoute(jsonRequest('POST', '/api/memory/recall', { limit: 100 }, cookie))).json()).data;
       expect(page.memories.map((m: { text: string }) => m.text)).toEqual(['Save for a new laptop']);
       expect(page.walrus).toEqual({ available: false, reason: 'Memory is off.' });
-      expect((await (await memorySummaryRoute(getRequest('/api/memory', cookie))).json()).data).toEqual({ consentEnabled: false, total: 1, storedOnWalrus: 0 });
+      expect((await (await memorySummaryRoute(getRequest('/api/memory', cookie))).json()).data).toMatchObject({ consentEnabled: false, total: 1, storedOnWalrus: 0 });
       expect((await rememberRoute(jsonRequest('POST', '/api/memory/remember', { category: 'goal', text: 'Must not be stored' }, cookie))).status).toBe(403);
     });
 

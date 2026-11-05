@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { jsonError, jsonSuccess } from '../../../lib/api-response';
 import { INVALID_MODE_MESSAGE, readAppMode } from '@/lib/app-mode';
 import { requireWalletSession } from '@/lib/auth/require-session';
+import { claimIdempotencyKey, readIdempotencyKey, storeIdempotentResponse } from '@/lib/postgres/idempotency';
 import { withWalletTransaction } from '@/lib/postgres/wallet-transaction';
 import { Budget } from '../../../modules/finance/domain/budget';
 import { periodBounds, toPeriodTotals } from '../../../modules/finance/domain/calculations';
@@ -169,6 +170,8 @@ async function walletPost(request: NextRequest) {
   try { body = await request.json(); } catch { return jsonError('VALIDATION_ERROR', 'Invalid JSON body.', 400); }
   if (!body || typeof body !== 'object' || Array.isArray(body)) return jsonError('VALIDATION_ERROR', 'Request body must be a JSON object.', 400);
   const input = body as Record<string, unknown>;
+  const idempotencyKey = readIdempotencyKey(request);
+  if (idempotencyKey === null) return jsonError('VALIDATION_ERROR', 'The Idempotency-Key header is not valid.', 400);
   try {
     if (input.action === 'set-budget') {
       const { period, amountMinor, currency = 'INR' } = input;
@@ -193,20 +196,30 @@ async function walletPost(request: NextRequest) {
       const currentAmountMinor = input.currentAmountMinor ?? 0;
       if (typeof currentAmountMinor !== 'number' || !Number.isSafeInteger(currentAmountMinor) || currentAmountMinor < 0) return jsonError('VALIDATION_ERROR', 'currentAmountMinor must be a non-negative safe integer.', 400);
       if (parsed.fields.targetDate && parsed.fields.targetDate < new Date().toISOString().slice(0, 10)) return jsonError('VALIDATION_ERROR', 'A new goal cannot have a target date in the past.', 400);
-      const created = await withWalletTransaction(session.walletAddress, async (client) => {
+      const scope = `budgets:create-goal:${mode}`;
+      const body = await withWalletTransaction(session.walletAddress, async (client) => {
+        const replay = await claimIdempotencyKey(client, session.userId, scope, idempotencyKey);
+        if (replay) return replay.body;
         const inserted = await client.query(
           `INSERT INTO savings_goals(user_id, name, target_amount_minor, current_amount_minor, currency, target_date, status, mode)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
           [session.userId, parsed.fields.name, parsed.fields.targetAmountMinor, currentAmountMinor, parsed.fields.currency ?? 'INR', parsed.fields.targetDate ?? null, currentAmountMinor >= (parsed.fields.targetAmountMinor as number) ? 'completed' : 'active', mode],
         ) as { rows: DbGoal[] };
-        return toSavingsGoal(inserted.rows[0]);
+        const created = { savingsGoal: serializeGoal(toSavingsGoal(inserted.rows[0])) };
+        await storeIdempotentResponse(client, session.userId, scope, idempotencyKey, { status: 201, body: created });
+        return created;
       });
-      return jsonSuccess({ savingsGoal: serializeGoal(created) }, 201);
+      return jsonSuccess(body, 201);
     }
 
     if (input.action === 'delete-goal' || input.action === 'update-goal' || input.action === 'set-goal-status' || input.action === 'contribute-goal') {
       if (typeof input.goalId !== 'string' || !input.goalId.trim()) return jsonError('VALIDATION_ERROR', 'goalId is required.', 400);
+      // Adding money is the one goal action a repeat would change.
+      const scope = 'budgets:contribute-goal';
+      const contributeKey = input.action === 'contribute-goal' ? idempotencyKey : undefined;
       const result = await withWalletTransaction(session.walletAddress, async (client) => {
+        const replay = await claimIdempotencyKey(client, session.userId, scope, contributeKey);
+        if (replay) return { replay: replay.body };
         const selected = await client.query('SELECT * FROM savings_goals WHERE id = $1 AND user_id = $2 FOR UPDATE', [input.goalId, session.userId]) as { rows: DbGoal[] };
         if (!selected.rows[0]) return { notFound: true as const };
         const existing = toSavingsGoal(selected.rows[0]);
@@ -232,8 +245,10 @@ async function walletPost(request: NextRequest) {
            WHERE id = $1 AND user_id = $2`,
           [existing.id, session.userId, updated.name, updated.targetAmount.amountMinor, updated.currentAmount.amountMinor, updated.targetAmount.currency, updated.targetDate ?? null, updated.status],
         );
+        await storeIdempotentResponse(client, session.userId, scope, contributeKey, { status: 200, body: { savingsGoal: serializeGoal(updated) } });
         return { goal: updated };
       });
+      if ('replay' in result) return jsonSuccess(result.replay);
       if ('notFound' in result) return jsonError('NOT_FOUND', 'Savings goal not found.', 404);
       if ('validationError' in result && typeof result.validationError === 'string') return jsonError('VALIDATION_ERROR', result.validationError, 400);
       if ('deleted' in result) return jsonSuccess({ deletedGoalId: result.deleted });

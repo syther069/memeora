@@ -1,94 +1,107 @@
 @import "tailwindcss";
 
 @font-face {
-  font-family: "Memeora Roboto";
-  src: url("/fonts/Roboto-VariableFont_wdth,wght.ttf") format("truetype");
+  font-family: "Space Grotesk";
+  src: url("/fonts/SpaceGrotesk-VariableFont_wght.ttf") format("truetype");
   font-style: normal;
-  font-weight: 100 900;
+  font-weight: 300 700;
   font-display: swap;
 }
 
 :root {
   color-scheme: light;
 
-  /* Canonical Memeora Clear Current brand palette from design.md */
-  --brand-deep-current: #0d47a1;
-  --brand-bright-current: #2196f3;
-  --brand-sky-blue: #90caf9;
-  --brand-cloud-blue: #e3f2fd;
+  /* Memeora palette from design.md: cream is the canvas, royal blue carries the brand. */
+  --brand-blue: #014baa;
+  --brand-blue-hover: #013c8a;
+  --brand-blue-pressed: #012f6c;
+  --brand-blue-bright: #1e66c9;
+  --brand-blue-soft: #b9ceea;
+  --brand-cream: #f8f3f0;
 
-  /* Surfaces & Hierarchy (55% Cloud Blue ground, 27% Sky Blue/supporting tones, 18% Bright/Deep Current accents) */
-  --surface-base: #f0f7ff;
-  --surface-canvas: #e3f2fd;
-  --surface-card: #ffffff;
-  --surface-card-subtle: #f8fbfe;
+  /* Surfaces */
+  --surface-base: #f8f3f0;
+  --surface-canvas: #f8f3f0;
+  --surface-card: #fffcfa;
+  --surface-card-subtle: #fbf7f4;
   --surface-elevated: #ffffff;
-  --surface-pill: #ffffff;
-  --surface-sky-tint: rgba(144, 202, 249, 0.22);
-  --surface-sky-solid: #e1f0fe;
-  --surface-cloud-solid: #edf6fd;
+  --surface-pill: #fffcfa;
+  --surface-sunken: #f1eae5;
+  --surface-well: #f4eeea;
+  --surface-tint: #e9eff8;
+  --surface-hover: rgba(1, 75, 170, 0.07);
+  --surface-rail: #014baa;
 
-  /* Borders & Inset Hairlines */
-  --border-subtle: rgba(13, 71, 161, 0.08);
-  --border-card: rgba(13, 71, 161, 0.12);
-  --border-pill: rgba(144, 202, 249, 0.45);
-  --border-strong: rgba(33, 150, 243, 0.35);
-  --border-focus: var(--brand-bright-current);
+  /* Borders */
+  --border-subtle: rgba(11, 35, 80, 0.08);
+  --border-card: rgba(11, 35, 80, 0.11);
+  --border-pill: rgba(11, 35, 80, 0.16);
+  --border-strong: rgba(1, 75, 170, 0.4);
+  /* Fields must be findable: 3:1 against cream and card surfaces. */
+  --border-field: rgba(11, 35, 80, 0.55);
+  --border-focus: var(--brand-blue);
 
-  /* Typography & Ink Hierarchy (WCAG AA AAA verified) */
-  --ink-primary: #0d47a1;
-  --ink-body: #1a365d;
-  --ink-secondary: #2b527d;
-  --ink-muted: #537699;
-  --ink-inverse: #ffffff;
+  /* Ink. Every pair below meets WCAG AA on cream and on card surfaces. */
+  --ink-primary: #0b2350;
+  --ink-body: #17294a;
+  --ink-secondary: #3c4a63;
+  --ink-muted: #5c6880;
+  --ink-inverse: #f8f3f0;
+  --ink-on-blue-muted: #cfdcf0;
 
-  /* Semantic Intent Tokens */
-  --accent-primary: #0d47a1;
-  --accent-primary-hover: #083378;
-  --accent-interactive: #2196f3;
-  --accent-interactive-hover: #1976d2;
-  --accent-support: #90caf9;
-  --accent-positive: #0b704d;
-  --accent-positive-bg: #e6f6f0;
-  --accent-positive-border: rgba(11, 112, 77, 0.25);
-  --accent-warning: #9a4d06;
-  --accent-warning-bg: #fef3e2;
-  --accent-warning-border: rgba(154, 77, 6, 0.25);
-  --accent-danger: #b42318;
-  --accent-danger-bg: #fee4e2;
-  --accent-danger-border: rgba(180, 35, 24, 0.25);
+  /* Intent */
+  --accent-primary: var(--brand-blue);
+  --accent-primary-hover: var(--brand-blue-hover);
+  --accent-interactive: var(--brand-blue-bright);
+  --accent-interactive-hover: var(--brand-blue-hover);
+  --accent-support: var(--brand-blue-soft);
+  --accent-positive: #0c6e4a;
+  --accent-positive-bg: #e4f3ec;
+  --accent-positive-border: rgba(12, 110, 74, 0.25);
+  --accent-warning: #8a4b00;
+  --accent-warning-bg: #fbefdc;
+  --accent-warning-border: rgba(138, 75, 0, 0.25);
+  --accent-danger: #b3261e;
+  --accent-danger-bg: #fbe6e3;
+  --accent-danger-border: rgba(179, 38, 30, 0.25);
 
-  /* Tactile Shadows & Depth from Artwork Reference */
-  --shadow-sm: 0 1px 2px rgba(13, 71, 161, 0.04);
-  --shadow-card: 0 4px 20px -4px rgba(13, 71, 161, 0.08), 0 2px 6px -1px rgba(13, 71, 161, 0.03);
-  --shadow-pill: 0 8px 24px -6px rgba(13, 71, 161, 0.12), 0 2px 8px -2px rgba(13, 71, 161, 0.05);
-  --shadow-hero: 0 12px 32px -8px rgba(13, 71, 161, 0.16), 0 4px 12px -2px rgba(33, 150, 243, 0.08);
-  --shadow-modal: 0 24px 48px -12px rgba(13, 71, 161, 0.22);
+  /* Depth is for floating things only; cards separate with a line. */
+  --shadow-sm: 0 1px 2px rgba(11, 35, 80, 0.05);
+  --shadow-card: none;
+  --shadow-pill: 0 4px 14px -6px rgba(1, 75, 170, 0.35);
+  --shadow-hero: 0 10px 28px -12px rgba(11, 35, 80, 0.22);
+  --shadow-modal: 0 24px 56px -16px rgba(11, 35, 80, 0.32);
 
-  /* Radii Scale */
-  --radius-xs: 6px;
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
   --radius-xl: 28px;
   --radius-pill: 9999px;
 
-  /* Motion DNA */
-  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --duration-micro: 120ms;
-  --duration-standard: 220ms;
-  --duration-structural: 320ms;
+  --duration-standard: 200ms;
+  --duration-structural: 300ms;
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+
+  /* The hatch is Memeora's data mark: bars read as ledger ruling, not a stock chart. */
+  --hatch-blue: repeating-linear-gradient(135deg, #014baa 0 5px, #1e66c9 5px 8px);
+  --hatch-soft: repeating-linear-gradient(135deg, #b9ceea 0 5px, #d3e0f2 5px 8px);
+  --hatch-danger: repeating-linear-gradient(135deg, #b3261e 0 5px, #cf4a41 5px 8px);
 
   --background: var(--surface-base);
   --foreground: var(--ink-primary);
 }
 
 @theme inline {
-  --font-sans: "Memeora Roboto", Arial, sans-serif;
-  --color-brand-deep: var(--brand-deep-current);
-  --color-brand-bright: var(--brand-bright-current);
-  --color-brand-sky: var(--brand-sky-blue);
-  --color-brand-cloud: var(--brand-cloud-blue);
+  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-cream: var(--brand-cream);
   --color-surface-base: var(--surface-base);
   --color-surface-card: var(--surface-card);
   --color-surface-elevated: var(--surface-elevated);
@@ -98,36 +111,109 @@
   --color-ink-muted: var(--ink-muted);
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
-  font-family: "Memeora Roboto", Arial, sans-serif;
+  font-family: var(--font-sans);
   background-color: var(--surface-base);
   color: var(--ink-body);
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
-  min-height: 100vh;
+  min-height: 100dvh;
+  overscroll-behavior-y: none;
 }
 
-/* Subtle fintech mesh atmosphere on the canvas */
+/* In the base layer, so `truncate` can still override them. */
+@layer base {
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+}
+
+/* Replaces the earlier gradient backdrop: the canvas is plain cream. */
 .app-mesh-canvas {
-  background: 
-    radial-gradient(circle at 10% 10%, rgba(144, 202, 249, 0.25) 0%, transparent 45%),
-    radial-gradient(circle at 90% 90%, rgba(227, 242, 253, 0.8) 0%, transparent 50%),
-    linear-gradient(180deg, #f0f7ff 0%, #e3f2fd 100%);
-  background-attachment: fixed;
+  background: var(--surface-base);
 }
 
-/* Tabular Numerals for all financial figures, timers, and balances */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
 
-/* WCAG AA Visible Focus Contract */
-:focus-visible {
-  outline: 2px solid var(--border-focus);
-  outline-offset: 2px;
+/* Smoothly curved corners where the browser supports them; pills and circles stay true. */
+@supports (corner-shape: squircle) {
+  [class*="rounded-"]:not(.rounded-full) {
+    corner-shape: squircle;
+  }
 }
 
-/* Mobile Safe Area & Input Zoom Prevention */
+/* In the base layer, so a component's own focus style can replace it. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--border-focus);
+    outline-offset: 2px;
+  }
+
+  .on-blue :focus-visible {
+    outline-color: var(--brand-cream);
+  }
+}
+
+/* A forgiving touch target without changing the visible size. */
+.hit {
+  position: relative;
+}
+.hit::after {
+  content: "";
+  position: absolute;
+  /* Taller than wide: controls sit 8px apart and their hit areas must not overlap. */
+  inset: -8px -4px;
+}
+
+.pb-safe {
+  padding-bottom: calc(var(--safe-bottom) + 0.5rem);
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes account-menu-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+/* Route changes, via React's ViewTransition. */
+::view-transition-old(root) {
+  animation: 120ms ease-out both view-fade-out;
+}
+::view-transition-new(root) {
+  animation: 200ms var(--ease-out) both view-fade-in;
+}
+@keyframes view-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes view-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+/* Prevents iOS zooming the page when a field takes focus. */
 @media (max-width: 768px) {
   input,
   select,
@@ -136,14 +222,63 @@ body {
   }
 }
 
-/* Reduced Motion Health Requirement (WCAG 2.3.3) */
+/* Forced colors drop fills and backgrounds, so these keep their meaning another way. */
+@media (forced-colors: active) {
+  /* Data marks: solid for spent, outlined for income, so the two stay apart. */
+  [style*="--hatch-blue"],
+  [style*="--hatch-danger"] {
+    forced-color-adjust: none;
+    background: CanvasText !important;
+  }
+
+  [style*="--hatch-soft"] {
+    forced-color-adjust: none;
+    background: Canvas !important;
+    border: 1px solid CanvasText !important;
+  }
+
+  /* A month with nothing recorded draws nothing, not a stray line. */
+  [style*="height:0%"],
+  [style*="height: 0%"] {
+    display: none;
+  }
+
+  /* Filled buttons would otherwise lose their edge. */
+  button {
+    border: 1px solid ButtonBorder;
+  }
+
+  /* Current page, workspace and filter. */
+  [aria-current="page"],
+  [aria-pressed="true"],
+  [aria-checked="true"],
+  [aria-selected="true"] {
+    outline: 2px solid Highlight;
+    outline-offset: 1px;
+  }
+}
+
+/*
+ * Reduced motion: movement goes, state stays. Page and menu entrances appear at once,
+ * skeletons hold still, and framer-motion surfaces swap their travel for a fade themselves.
+ * Colour and focus changes are left alone, since they carry state and do not move.
+ */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+
+  [class*="[animation:"],
+  .animate-pulse {
+    animation: none !important;
+  }
+
+  .transition-transform {
+    transition: none !important;
+  }
+
+  * {
     scroll-behavior: auto !important;
   }
 }

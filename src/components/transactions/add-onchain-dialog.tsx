@@ -82,7 +82,7 @@ export function AddOnChainDialog({ onClose, onSaved, onUseSui }: {
     }
   };
 
-  const selectClass = 'h-11 w-full rounded-xl border border-[var(--brand-sky-blue)]/70 bg-[var(--surface-card)] px-3.5 text-sm font-medium text-[var(--ink-primary)]';
+  const selectClass = 'h-11 w-full rounded-[var(--radius-sm)] border border-[var(--border-field)] bg-[var(--surface-elevated)] px-3 text-sm text-[var(--ink-primary)] hover:border-[var(--border-strong)]';
 
   return (
     <Modal isOpen onClose={onClose} title="Add a transaction from another chain" description="Memeora cannot check other chains, so this is saved as “Not verified, added by you”.">
@@ -92,14 +92,14 @@ export function AddOnChainDialog({ onClose, onSaved, onUseSui }: {
           <select id="onchain-chain" value={chain} onChange={(event) => setChain(event.target.value)} className={selectClass}>
             {CHAINS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select>
-          <p className="text-[11px] text-[var(--ink-muted)]">On Sui? <button type="button" onClick={onUseSui} className="font-bold text-[var(--brand-deep-current)] hover:underline cursor-pointer">Import it from your wallet</button>, and it will be verified.</p>
+          <p className="text-[11px] text-[var(--ink-muted)]">On Sui? <button type="button" onClick={onUseSui} className="font-bold text-[var(--brand-blue)] hover:underline cursor-pointer">Import it from your wallet</button>, and it will be verified.</p>
         </div>
 
         <Input label="Transaction hash" required placeholder="0x…" value={txHash} onChange={(event) => setTxHash(event.target.value)} />
 
-        <div role="group" aria-label="Direction" className="grid grid-cols-2 gap-2 rounded-full border border-[var(--brand-sky-blue)]/60 bg-[var(--surface-cloud-solid)] p-1 text-xs">
+        <div role="group" aria-label="Direction" className="grid grid-cols-2 gap-1 rounded-full bg-[var(--surface-sunken)] p-1 text-xs">
           {([['expense', 'Sent or spent'], ['income', 'Received']] as const).map(([option, label]) => (
-            <button key={option} type="button" aria-pressed={type === option} onClick={() => chooseType(option)} className={`rounded-full py-2 font-bold cursor-pointer ${type === option ? 'bg-[var(--brand-deep-current)] text-white' : 'text-[var(--ink-muted)] hover:text-[var(--ink-primary)]'}`}>{label}</button>
+            <button key={option} type="button" aria-pressed={type === option} onClick={() => chooseType(option)} className={`rounded-full py-2 font-bold cursor-pointer ${type === option ? 'bg-[var(--brand-blue)] text-white' : 'text-[var(--ink-muted)] hover:text-[var(--ink-primary)]'}`}>{label}</button>
           ))}
         </div>
 

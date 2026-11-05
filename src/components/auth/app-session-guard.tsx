@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { Spinner } from '@/components/ui/spinner';
 import { isAppMode, type AppMode } from '@/lib/app-mode';
 import { setFinanceApiMode } from '@/lib/finance-api';
 import type { CurrencyCode } from '@/modules/finance/domain/money';
@@ -139,6 +140,6 @@ export function AppSessionGuard({ children }: { children: React.ReactNode }) {
   if (state === 'authenticated' && !mustOnboard && !alreadyOnboarded) {
     return <AppSessionContext.Provider value={session}>{children}</AppSessionContext.Provider>;
   }
-  if (state === 'error') return <main className="min-h-screen grid place-items-center p-6"><div className="max-w-sm text-center"><h1 className="text-lg font-bold">Could not verify your session</h1><p className="mt-2 text-sm text-[var(--ink-secondary)]">Check your connection and try again.</p><button className="mt-4 rounded-full bg-[var(--brand-deep-current)] px-5 py-2 text-white" onClick={() => setRetry((value) => value + 1)}>Retry</button></div></main>;
-  return <main className="min-h-screen grid place-items-center p-6 text-sm text-[var(--ink-secondary)]" aria-live="polite">Opening your workspace…</main>;
+  if (state === 'error') return <main className="grid min-h-dvh place-items-center p-6"><div className="max-w-sm text-center"><h1 className="text-xl font-bold text-[var(--ink-primary)]">Could not check your session</h1><p className="mt-2 text-sm text-[var(--ink-secondary)]">Check your connection, then try again. Nothing you saved was lost.</p><button type="button" className="mt-4 h-10 rounded-full bg-[var(--brand-blue)] px-5 text-sm font-semibold text-[var(--ink-inverse)] hover:bg-[var(--brand-blue-hover)] cursor-pointer" onClick={() => setRetry((value) => value + 1)}>Check session again</button></div></main>;
+  return <main className="grid min-h-dvh place-items-center p-6 text-[var(--brand-blue)]" aria-live="polite"><p className="flex items-center gap-2.5 text-sm text-[var(--ink-secondary)]"><Spinner size={20} className="text-[var(--brand-blue)]" />Opening your workspace…</p></main>;
 }

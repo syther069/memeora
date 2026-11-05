@@ -1,11 +1,12 @@
 'use client';
 
 import * as React from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCurrentAccount, useDAppKit, useWallets } from '@mysten/dapp-kit-react';
-import { ArrowRight, Check, ShieldCheck, Wallet } from 'lucide-react';
+import { ArrowRight, Check, ShieldCheck, Wallet } from 'iconoir-react';
+import { BrandMark } from '@/components/layout/brand-mark';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 
 function safeDestination(value: string | null): string {
   return value?.startsWith('/') && !value.startsWith('//') ? value : '/dashboard';
@@ -85,44 +86,66 @@ export default function SignInPage() {
   const supportedWallets = wallets.filter(({ name }) => /slush|suiet|sui wallet/i.test(name));
 
   return (
-    <main className="grid min-h-screen place-items-center bg-[var(--surface-base)] px-5 py-10">
-      <section className="w-full max-w-lg rounded-3xl border border-[var(--border-card)] bg-[var(--surface-card)] p-7 shadow-[var(--shadow-card)] sm:p-9">
-        <Link href="/" className="text-xs font-black uppercase tracking-[.18em] text-[var(--brand-deep-current)]">Memeora</Link>
-        <div className="mt-7 flex items-center gap-3 text-[var(--brand-deep-current)]"><div className="grid h-12 w-12 place-items-center rounded-2xl bg-[var(--surface-sky-solid)]"><Wallet className="h-6 w-6" /></div><p className="text-xs font-bold uppercase tracking-[.12em]">Sui Mainnet</p></div>
-        <h1 className="mt-5 text-3xl font-black tracking-tight text-[var(--ink-primary)]">A finance assistant that remembers</h1>
-        <p className="mt-3 text-sm leading-6 text-[var(--ink-secondary)]">Track your spending with exact sums. Save your rules and goals to Walrus, and get advice that follows them, session after session. You can check every memory on Sui.</p>
-        <p className="mt-5 text-xs font-bold text-[var(--ink-primary)]">{account ? 'Step 2 of 2: sign to prove this wallet is yours' : 'Step 1 of 2: connect your Sui wallet'}</p>
+    <div className="grid min-h-dvh lg:grid-cols-[1.1fr_1fr]">
+      <aside className="on-blue relative hidden flex-col justify-between overflow-hidden bg-[var(--brand-blue)] p-10 text-[var(--ink-inverse)] lg:flex xl:p-14">
+        <div className="flex items-center gap-3">
+          <BrandMark tone="cream" />
+          <span className="text-lg font-bold tracking-tight">Memeora</span>
+        </div>
+        <div className="relative z-10 max-w-lg">
+          <p className="text-5xl font-bold leading-[1.05] tracking-tight xl:text-6xl">A finance assistant that remembers.</p>
+          <dl className="mt-10 grid grid-cols-3 gap-6 border-t border-white/25 pt-6 text-sm">
+            <div><dt className="font-semibold">Exact sums</dt><dd className="mt-1 text-xs leading-relaxed text-[var(--ink-on-blue-muted)]">From your ledger, never from AI.</dd></div>
+            <div><dt className="font-semibold">Your rules</dt><dd className="mt-1 text-xs leading-relaxed text-[var(--ink-on-blue-muted)]">Kept on Walrus, in an account your wallet owns.</dd></div>
+            <div><dt className="font-semibold">Proof</dt><dd className="mt-1 text-xs leading-relaxed text-[var(--ink-on-blue-muted)]">Check every memory on Sui, through Tatum.</dd></div>
+          </dl>
+        </div>
+        <p className="text-xs text-[var(--ink-on-blue-muted)]">Personal and Business workspaces, kept apart.</p>
+        <div aria-hidden className="absolute inset-y-0 right-0 w-40 opacity-10" style={{ backgroundImage: 'repeating-linear-gradient(135deg, #f8f3f0 0 6px, transparent 6px 16px)' }} />
+      </aside>
 
-        {!walletRuntimeReady ? (
-          <div role="status" className="mt-7 rounded-2xl border border-[var(--border-card)] bg-[var(--surface-card-subtle)] p-4 text-sm text-[var(--ink-secondary)]">Looking for your Sui wallet…</div>
-        ) : account ? (
-          <div className="mt-7 space-y-4">
-            <div className="flex items-center gap-3 rounded-2xl border border-[var(--accent-positive-border)] bg-[var(--accent-positive-bg)] p-4">
-              <Check className="h-5 w-5 shrink-0 text-[var(--accent-positive)]" />
-              <div className="min-w-0"><p className="text-xs font-bold text-[var(--accent-positive)]">Wallet connected</p><p className="mt-1 truncate font-mono text-xs text-[var(--ink-primary)]">{account.address}</p></div>
+      <main className="flex flex-col justify-center px-5 pb-[calc(1.5rem+var(--safe-bottom))] pt-[calc(2rem+var(--safe-top))] sm:px-10">
+        <section className="mx-auto w-full max-w-md">
+          <div className="mb-8 flex items-center gap-3 lg:hidden">
+            <BrandMark />
+            <span className="text-lg font-bold tracking-tight text-[var(--ink-primary)]">Memeora</span>
+          </div>
+          <p className="text-xs font-semibold text-[var(--brand-blue)]">{account ? 'Step 2 of 2' : 'Step 1 of 2'} · Sui Mainnet</p>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-[var(--ink-primary)]">{account ? 'Prove this wallet is yours' : 'Connect your Sui wallet'}</h1>
+          <p className="mt-2 text-sm leading-relaxed text-[var(--ink-secondary)]">
+            <span className="lg:hidden">Track your money with exact sums, and get advice that follows the rules you save on Walrus. </span>
+            {account ? 'Your wallet will ask you to sign a message. It is free: it sends no transaction and spends no SUI.' : 'Your wallet is your account. There is no password to create.'}
+          </p>
+
+          {!walletRuntimeReady ? (
+            <div role="status" className="mt-6 flex items-center gap-2.5 rounded-[var(--radius-md)] bg-[var(--surface-well)] p-4 text-sm text-[var(--ink-secondary)]"><Spinner size={18} className="text-[var(--brand-blue)]" />Looking for your Sui wallet…</div>
+          ) : account ? (
+            <div className="mt-6 space-y-3">
+              <div className="flex items-center gap-3 rounded-[var(--radius-md)] border border-[var(--accent-positive-border)] bg-[var(--accent-positive-bg)] p-3.5">
+                <Check aria-hidden className="h-5 w-5 shrink-0 text-[var(--accent-positive)]" />
+                <div className="min-w-0"><p className="text-xs font-semibold text-[var(--accent-positive)]">Wallet connected</p><p className="mt-0.5 truncate font-mono text-xs text-[var(--ink-primary)]">{account.address}</p></div>
+              </div>
+              <Button type="button" size="lg" className="w-full" isLoading={signingIn} onClick={() => void signIn()} rightIcon={<ArrowRight className="h-4 w-4" />}>Sign in with this wallet</Button>
+              <button type="button" disabled={signingIn} onClick={() => { setError(''); void dAppKit.disconnectWallet(); }} className="hit mx-auto block text-xs font-semibold text-[var(--brand-blue)] hover:underline disabled:opacity-50 cursor-pointer">Use a different wallet</button>
             </div>
-            <Button type="button" size="lg" className="w-full" isLoading={signingIn} onClick={() => void signIn()} rightIcon={!signingIn ? <ArrowRight className="h-4 w-4" /> : undefined}>Sign in with this wallet</Button>
-            <p className="text-xs leading-5 text-[var(--ink-muted)]">Your wallet will ask you to sign a message. It is free: it sends no transaction and spends no SUI.</p>
-            <button type="button" disabled={signingIn} onClick={() => { setError(''); void dAppKit.disconnectWallet(); }} className="text-xs font-bold text-[var(--brand-deep-current)] hover:underline cursor-pointer disabled:opacity-50">Use a different wallet</button>
-          </div>
-        ) : supportedWallets.length > 0 ? (
-          <div className="mt-7 space-y-3">
-            {supportedWallets.map((wallet) => (
-              <Button key={wallet.name} type="button" size="lg" variant="outline" className="w-full justify-between" disabled={Boolean(connectingWallet)} isLoading={connectingWallet === wallet.name} onClick={() => void connect(wallet.name)}>
-                <span className="flex items-center gap-3"><Wallet className="h-4 w-4" />Connect with {wallet.name}</span>
-                {connectingWallet !== wallet.name && <ArrowRight className="h-4 w-4" />}
-              </Button>
-            ))}
-          </div>
-        ) : (
-          <div role="status" className="mt-7 rounded-2xl border border-[var(--border-card)] bg-[var(--surface-card-subtle)] p-4 text-sm leading-6 text-[var(--ink-secondary)]">
-            No supported Sui wallet was detected. Install or unlock Slush, Suiet, or Sui Wallet, then reload this page.
-          </div>
-        )}
+          ) : supportedWallets.length > 0 ? (
+            <div className="mt-6 space-y-2.5">
+              {supportedWallets.map((wallet) => (
+                <Button key={wallet.name} type="button" size="lg" variant="outline" className="w-full justify-between" disabled={Boolean(connectingWallet)} isLoading={connectingWallet === wallet.name} onClick={() => void connect(wallet.name)} rightIcon={<ArrowRight className="h-4 w-4" />}>
+                  <span className="flex items-center gap-3"><Wallet aria-hidden className="h-4 w-4" />Connect with {wallet.name}</span>
+                </Button>
+              ))}
+            </div>
+          ) : (
+            <div role="status" className="mt-6 rounded-[var(--radius-md)] bg-[var(--surface-well)] p-4 text-sm leading-relaxed text-[var(--ink-secondary)]">
+              No Sui wallet was found. Install or unlock Slush, Suiet or Sui Wallet, then reload this page.
+            </div>
+          )}
 
-        <div className="mt-6 flex items-start gap-3 border-t border-[var(--border-subtle)] pt-5 text-xs leading-5 text-[var(--ink-muted)]"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[var(--brand-deep-current)]" /><p>Memeora never asks for your recovery phrase or private key. Each wallet has its own private workspace.</p></div>
-        {error && <p role="alert" className="mt-4 rounded-xl border border-[var(--accent-danger-border)] bg-[var(--accent-danger-bg)] p-3 text-sm text-[var(--accent-danger)]">{error}</p>}
-      </section>
-    </main>
+          {error && <p role="alert" className="mt-3 rounded-[var(--radius-sm)] border border-[var(--accent-danger-border)] bg-[var(--accent-danger-bg)] p-3 text-sm text-[var(--accent-danger)]">{error}</p>}
+          <div className="mt-6 flex items-start gap-2.5 border-t border-[var(--border-subtle)] pt-4 text-xs leading-relaxed text-[var(--ink-muted)]"><ShieldCheck aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-[var(--brand-blue)]" /><p>Memeora never asks for your recovery phrase or private key. Each wallet has its own private workspace.</p></div>
+        </section>
+      </main>
+    </div>
   );
 }

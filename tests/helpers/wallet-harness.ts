@@ -27,6 +27,7 @@ const MIGRATIONS = [
   '0006_wallet_memory_accounts.sql',
   '0007_drop_memory_delete_batches.sql',
   '0008_app_modes_and_onchain.sql',
+  '0009_idempotency_keys.sql',
 ];
 
 export async function createMigratedDatabase(): Promise<PGlite> {

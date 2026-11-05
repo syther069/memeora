@@ -1,8 +1,9 @@
 'use client';
 
 import * as React from 'react';
+import { motion, useDragControls, useReducedMotion } from 'framer-motion';
+import { Xmark } from 'iconoir-react';
 import { cn } from '@/lib/utils';
-import { X } from 'lucide-react';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -13,79 +14,104 @@ export interface ModalProps {
   className?: string;
 }
 
-export function Modal({
-  isOpen,
-  onClose,
-  title,
-  description,
-  children,
-  className,
-}: ModalProps) {
+const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+
+/** How far, or how fast, a sheet must be pulled down before it closes. */
+const DISMISS_DISTANCE_PX = 110;
+const DISMISS_VELOCITY = 600;
+
+/**
+ * A dialog on larger screens and a bottom sheet on phones. The sheet can be pulled
+ * down by its handle; the close button and Escape always work too.
+ */
+export function Modal({ isOpen, onClose, title, description, children, className }: ModalProps) {
+  const panelRef = React.useRef<HTMLDivElement>(null);
+  const dragControls = useDragControls();
+  const reducedMotion = useReducedMotion();
+  const titleId = React.useId();
+
   React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+    if (!isOpen) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const panel = panelRef.current;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
         onClose();
+        return;
+      }
+      if (event.key !== 'Tab' || !panel) return;
+      const items = [...panel.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((item) => item.offsetParent !== null);
+      if (items.length === 0) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
       }
     };
-
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      window.addEventListener('keydown', handleKeyDown);
-    }
-
+    // A field marked autoFocus keeps its focus; otherwise focus moves into the dialog.
+    if (panel && !panel.contains(document.activeElement)) panel.focus();
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = previousOverflow;
       window.removeEventListener('keydown', handleKeyDown);
+      previouslyFocused?.focus?.();
     };
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
-    >
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-[var(--brand-deep-current)]/25 backdrop-blur-xs transition-opacity duration-200"
+    <div role="dialog" aria-modal="true" aria-labelledby={title ? titleId : undefined} className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6">
+      <motion.div
+        className="fixed inset-0 bg-[var(--ink-primary)]/35"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: reducedMotion ? 0 : 0.15 }}
         onClick={onClose}
         aria-hidden="true"
       />
-
-      {/* Modal Dialog Card */}
-      <div
+      <motion.div
+        ref={panelRef}
+        tabIndex={-1}
+        drag="y"
+        dragControls={dragControls}
+        dragListener={false}
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0, bottom: 0.8 }}
+        onDragEnd={(_, info) => {
+          if (info.offset.y > DISMISS_DISTANCE_PX || info.velocity.y > DISMISS_VELOCITY) onClose();
+        }}
+        initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 520, damping: 42, mass: 0.8 }}
         className={cn(
-          // Scrolls inside itself, so Save stays reachable on short screens.
-          'max-h-[calc(100dvh-2rem)] overflow-y-auto',
-          'relative w-full max-w-lg bg-gradient-to-b from-white via-white to-[#f7faff] border border-[var(--brand-sky-blue)]/80 rounded-2xl sm:rounded-3xl shadow-[var(--shadow-modal)] p-6 sm:p-8',
-          'z-10 animate-in fade-in-0 zoom-in-95 duration-200 focus:outline-none ring-1 ring-white/90 ring-inset',
-          className
+          'relative z-10 w-full sm:max-w-lg border border-transparent bg-[var(--surface-card)] shadow-[var(--shadow-modal)] focus:outline-none',
+          'max-h-[calc(100dvh-var(--safe-top)-1rem)] sm:max-h-[calc(100dvh-3rem)] overflow-y-auto overscroll-contain',
+          'rounded-t-[var(--radius-xl)] sm:rounded-[var(--radius-xl)] px-5 sm:px-7 pt-2 sm:pt-6 pb-[calc(1.25rem+var(--safe-bottom))] sm:pb-6',
+          className,
         )}
       >
-        <div className="flex items-start justify-between mb-5">
-          <div>
-            {title && (
-              <h2 className="text-lg sm:text-xl font-bold tracking-tight text-[var(--ink-primary)]">
-                {title}
-              </h2>
-            )}
-            {description && (
-              <p className="text-xs sm:text-sm text-[var(--ink-muted)] mt-1">{description}</p>
-            )}
+        {/* Pull-down handle, phones only. touch-none keeps the drag from scrolling the page. */}
+        <div onPointerDown={(event) => dragControls.start(event)} className="sm:hidden -mx-5 mb-1 flex h-7 touch-none cursor-grab items-center justify-center" aria-hidden="true">
+          <span className="h-1 w-10 rounded-full bg-[var(--border-pill)]" />
+        </div>
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div className="min-w-0">
+            {title && <h2 id={titleId} className="text-lg font-bold tracking-tight text-[var(--ink-primary)]">{title}</h2>}
+            {description && <p className="text-xs text-[var(--ink-secondary)] mt-1 leading-relaxed">{description}</p>}
           </div>
-          <button
-            onClick={onClose}
-            aria-label="Close dialog"
-            className="p-1.5 rounded-full text-[var(--ink-muted)] hover:text-[var(--ink-primary)] hover:bg-[var(--surface-sky-tint)] transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
+          <button type="button" onClick={onClose} aria-label="Close dialog" className="hit shrink-0 p-1.5 rounded-full text-[var(--ink-muted)] hover:text-[var(--ink-primary)] hover:bg-[var(--surface-hover)] transition-colors cursor-pointer">
+            <Xmark className="w-5 h-5" />
           </button>
         </div>
-
         <div>{children}</div>
-      </div>
+      </motion.div>
     </div>
   );
 }

@@ -3,22 +3,20 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppSession } from '@/components/auth/app-session-guard';
-import { AddOnChainDialog } from '@/components/transactions/add-onchain-dialog';
-import { ImportSuiDialog } from '@/components/transactions/import-sui-dialog';
-import { Badge } from '@/components/ui/badge';
+import { TxRow } from '@/components/transactions/tx-row';
+import { ListSkeleton } from '@/components/ui/skeleton';
+import { FreshnessNote, LoadErrorPanel } from '@/components/ui/status-panels';
+import { useFinanceResource } from '@/lib/use-finance-resource';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Modal } from '@/components/ui/modal';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useToast } from '@/components/ui/toast';
 import { useLedger } from '@/components/layout/ledger-provider';
-import { currentPeriod, financeApi, financeApiHeaders, FinanceApiError, formatMoney, type ApiTransaction } from '@/lib/finance-api';
+import { currentPeriod, financeApiHeaders, formatMoney, type ApiTransaction } from '@/lib/finance-api';
 import { MEMORY_DRAFT_KEY } from '@/lib/memory-draft';
 import { formatLedgerDate, formatPeriod } from '@/lib/dates';
-import { Search, ArrowDownRight, ArrowUpRight, Brain, Download, Link2, Receipt, Wallet, X, RotateCcw, Pencil, Trash2 } from 'lucide-react';
-
-type LoadState = 'loading' | 'ready' | 'offline' | 'error';
+import { Brain, Plus, Download, EditPencil, Link, Page, Search, Trash, Wallet, Xmark, Check } from 'iconoir-react';
 
 const LIST_LIMIT = 100;
 
@@ -26,40 +24,16 @@ export default function TransactionsPage() {
   const { toast } = useToast();
   const router = useRouter();
   const { mode } = useAppSession();
-  const { version, openAddTransaction, openEditTransaction, notifyLedgerChanged } = useLedger();
-  const [isImportOpen, setIsImportOpen] = React.useState(false);
-  const [isOtherChainOpen, setIsOtherChainOpen] = React.useState(false);
+  const { version, hiddenIds, openAddTransaction, openEditTransaction, openImportSui, openOtherChain, deleteTransaction } = useLedger();
   const [isExporting, setIsExporting] = React.useState(false);
-  const [transactions, setTransactions] = React.useState<ApiTransaction[]>([]);
-  const [loadState, setLoadState] = React.useState<LoadState>('loading');
-  const [loadError, setLoadError] = React.useState('');
   const [period, setPeriod] = React.useState('');
   const [selectedCategory, setSelectedCategory] = React.useState('All');
   const [selectedType, setSelectedType] = React.useState<'all' | 'expense' | 'income'>('all');
   const [searchQuery, setSearchQuery] = React.useState('');
-  const [toDelete, setToDelete] = React.useState<ApiTransaction | null>(null);
-  const [isDeleting, setIsDeleting] = React.useState(false);
-  const [deleteError, setDeleteError] = React.useState<string | null>(null);
 
-  const loadTransactions = React.useCallback(async () => {
-    // Keep the current list on screen while a filter change or edit reloads it.
-    setLoadState((current) => (current === 'ready' ? current : 'loading'));
-    setLoadError('');
-    try {
-      const query = `limit=${LIST_LIMIT}${period ? `&period=${period}` : ''}`;
-      const data = await financeApi<{ transactions: ApiTransaction[] }>(`/api/transactions?${query}`);
-      setTransactions(data.transactions);
-      setLoadState('ready');
-    } catch (error) {
-      setLoadError(error instanceof Error ? error.message : 'Unable to load transactions.');
-      setLoadState(error instanceof FinanceApiError && error.offline ? 'offline' : 'error');
-    }
-  }, [period]);
-
-  React.useEffect(() => {
-    const timer = window.setTimeout(() => { void loadTransactions(); }, 0);
-    return () => window.clearTimeout(timer);
-  }, [loadTransactions, version]);
+  const ledger = useFinanceResource<{ transactions: ApiTransaction[] }>(`/api/transactions?limit=${LIST_LIMIT}${period ? `&period=${period}` : ''}`, version);
+  // The list on screen stays while a filter change or an edit reloads it.
+  const transactions = (ledger.data?.transactions ?? []).filter((tx) => !hiddenIds.has(tx.id));
 
   const categories = ['All', ...Array.from(new Set(transactions.map((tx) => tx.category))).sort()];
   const query = searchQuery.trim().toLowerCase();
@@ -98,43 +72,20 @@ export default function TransactionsPage() {
       URL.revokeObjectURL(url);
       toast({ type: 'success', title: 'CSV exported', description: `Your transactions for ${formatPeriod(exportPeriod)}.` });
     } catch (error) {
-      toast({ type: 'warning', title: 'Export failed', description: error instanceof Error ? error.message : 'Please retry.' });
+      toast({ type: 'error', title: 'The CSV was not exported', description: error instanceof Error ? error.message : 'Please try again.' });
     } finally {
       setIsExporting(false);
     }
   };
 
-  const handleDelete = async () => {
-    if (!toDelete || isDeleting) return;
-    setIsDeleting(true);
-    setDeleteError(null);
-    try {
-      await financeApi(`/api/transactions/${encodeURIComponent(toDelete.id)}`, { method: 'DELETE' });
-      setToDelete(null);
-      notifyLedgerChanged();
-      toast({ type: 'info', title: 'Transaction deleted', description: 'Your totals have been updated.' });
-    } catch (error) {
-      setDeleteError(error instanceof Error ? error.message : 'This transaction could not be deleted. Please retry.');
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
   return (
-    <div className="space-y-6">
-      {(loadState === 'offline' || loadState === 'error') && (
-        <Card role="alert" className="flex flex-wrap items-center justify-between gap-4 border-[var(--accent-warning-border)]">
-          <div>
-            <h3 className="font-bold text-[var(--ink-primary)]">{loadState === 'offline' ? 'You seem to be offline' : 'Could not load your transactions'}</h3>
-            <p className="text-sm text-[var(--ink-muted)] mt-1">{loadError}</p>
-          </div>
-          <Button variant="outline" size="sm" onClick={() => void loadTransactions()} leftIcon={<RotateCcw className="w-3.5 h-3.5" />}>Try again</Button>
-        </Card>
-      )}
+    <div className="space-y-4">
+      {ledger.error && !ledger.data && <LoadErrorPanel title="Could not load your transactions" message={ledger.error} offline={ledger.isOffline} onRetry={() => ledger.refresh()} />}
 
       <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" variant="secondary" size="sm" leftIcon={<Wallet className="w-3.5 h-3.5" />} onClick={() => setIsImportOpen(true)}>Import from Sui wallet</Button>
-        <Button type="button" variant="outline" size="sm" leftIcon={<Link2 className="w-3.5 h-3.5" />} onClick={() => setIsOtherChainOpen(true)}>Add from another chain</Button>
+        <Button variant="primary" size="sm" onClick={openAddTransaction} leftIcon={<Plus className="h-4 w-4" />}>Add transaction</Button>
+        <Button type="button" variant="secondary" size="sm" leftIcon={<Wallet className="w-3.5 h-3.5" />} onClick={openImportSui}>Import from Sui wallet</Button>
+        <Button type="button" variant="outline" size="sm" leftIcon={<Link className="w-3.5 h-3.5" />} onClick={openOtherChain}>Add from another chain</Button>
         {mode === 'business' && <Button type="button" variant="outline" size="sm" isLoading={isExporting} leftIcon={<Download className="w-3.5 h-3.5" />} onClick={() => void exportCsv()}>Export {period ? formatPeriod(period) : 'this month'} as CSV</Button>}
       </div>
 
@@ -147,23 +98,23 @@ export default function TransactionsPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               leftAddon={<Search className="w-4 h-4 text-[var(--ink-muted)]" />}
-              rightAddon={searchQuery ? <button type="button" onClick={() => setSearchQuery('')} aria-label="Clear search" className="p-1 hover:text-[var(--ink-primary)] cursor-pointer"><X className="w-3.5 h-3.5" /></button> : null}
+              rightAddon={searchQuery ? <button type="button" onClick={() => setSearchQuery('')} aria-label="Clear search" className="p-1 hover:text-[var(--ink-primary)] cursor-pointer"><Xmark className="w-3.5 h-3.5" /></button> : null}
             />
           </div>
           <div className="sm:w-48">
             <Input label="Month" type="month" value={period} onChange={(e) => setPeriod(e.target.value)} />
           </div>
-          <div role="group" aria-label="Transaction type" className="flex self-start lg:self-auto p-1 bg-[var(--surface-cloud-solid)] rounded-full border border-[var(--brand-sky-blue)]/60 text-xs">
+          <div role="group" aria-label="Transaction type" className="flex self-start lg:self-auto p-1 bg-[var(--surface-sunken)] rounded-full border border-[var(--brand-blue-soft)]/60 text-xs">
             {(['all', 'expense', 'income'] as const).map((type) => (
-              <button key={type} type="button" onClick={() => setSelectedType(type)} aria-pressed={selectedType === type} className={`px-4 py-1.5 rounded-full font-bold capitalize transition-all cursor-pointer ${selectedType === type ? 'bg-[var(--brand-deep-current)] text-white' : 'text-[var(--ink-muted)] hover:text-[var(--ink-primary)]'}`}>{type}</button>
+              <button key={type} type="button" onClick={() => setSelectedType(type)} aria-pressed={selectedType === type} className={`inline-flex items-center gap-1 px-4 py-1.5 rounded-full font-bold capitalize transition-colors cursor-pointer ${selectedType === type ? 'bg-[var(--brand-blue)] text-white' : 'text-[var(--ink-muted)] hover:text-[var(--ink-primary)]'}`}>{selectedType === type && <Check aria-hidden className="h-3 w-3" />}{type}</button>
             ))}
           </div>
         </div>
         {(categories.length > 1 || hasActiveFilters) && (
-          <div className="flex items-center justify-between gap-3 overflow-x-auto pt-4 border-t border-[var(--border-subtle)]">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-[var(--border-subtle)]">
+            <div className="flex flex-wrap items-center gap-2">
               {categories.map((category) => (
-                <button key={category} type="button" onClick={() => setSelectedCategory(category)} aria-pressed={selectedCategory === category} className={`px-4 py-1.5 rounded-full text-xs font-bold shrink-0 transition-all cursor-pointer border ${selectedCategory === category ? 'bg-[var(--brand-deep-current)] text-white border-transparent' : 'bg-[var(--surface-card)] text-[var(--ink-secondary)] hover:bg-[var(--surface-sky-tint)] border-[var(--brand-sky-blue)]/70'}`}>{category}</button>
+                <button key={category} type="button" onClick={() => setSelectedCategory(category)} aria-pressed={selectedCategory === category} className={`inline-flex items-center gap-1 px-4 py-1.5 rounded-full text-xs font-bold shrink-0 transition-colors cursor-pointer border ${selectedCategory === category ? 'bg-[var(--brand-blue)] text-white border-transparent' : 'bg-[var(--surface-card)] text-[var(--ink-secondary)] hover:bg-[var(--surface-hover)] border-[var(--brand-blue-soft)]/70'}`}>{selectedCategory === category && <Check aria-hidden className="h-3 w-3" />}{category}</button>
               ))}
             </div>
             {hasActiveFilters && <Button variant="ghost" size="sm" className="shrink-0" onClick={clearFilters}>Clear filters</Button>}
@@ -172,96 +123,41 @@ export default function TransactionsPage() {
       </Card>
 
       <Card className="p-5 sm:p-7">
-        <div className="pb-4 mb-2 border-b border-[var(--border-subtle)]">
-          <h3 className="text-base font-bold text-[var(--ink-primary)]">{period ? formatPeriod(period) : 'Latest transactions'}</h3>
-          <p className="text-xs text-[var(--ink-muted)]">
-            {loadState === 'ready'
-              ? `Showing ${filtered.length}${transactions.length === LIST_LIMIT ? `, from the latest ${LIST_LIMIT}. Pick a month to see older entries` : ''}.`
-              : 'Loading…'}
-          </p>
-        </div>
-
-        {loadState === 'loading' ? (
-          <p role="status" className="py-10 text-center text-sm text-[var(--ink-muted)]">Loading transactions…</p>
-        ) : loadState !== 'ready' ? (
-          <EmptyState icon={<Receipt className="w-6 h-6" />} title="Transactions are not available" description="Check your connection and try again." />
-        ) : filtered.length === 0 ? (
-          hasActiveFilters
-            ? <EmptyState icon={<Receipt className="w-6 h-6" />} title="Nothing matches these filters" description="Try another month, or clear the filters." actionLabel="Clear filters" onAction={clearFilters} />
-            : <EmptyState icon={<Receipt className="w-6 h-6" />} title="No transactions yet" description="Add your income and spending. Your totals and the Assistant work from these entries." actionLabel="Add your first transaction" onAction={openAddTransaction} />
-        ) : (
-          <ul aria-label="Transactions" className="divide-y divide-[var(--border-subtle)]">
-            {filtered.map((tx) => {
-              const isExpense = tx.type === 'expense';
-              return (
-                <li key={tx.id} className="py-4 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-4 min-w-0">
-                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border ${isExpense ? 'bg-[var(--surface-cloud-solid)] border-[var(--brand-sky-blue)] text-[var(--brand-deep-current)]' : 'bg-[var(--accent-positive-bg)] border-[var(--accent-positive-border)] text-[var(--accent-positive)]'}`}>
-                      {isExpense ? <ArrowDownRight className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-[var(--ink-primary)] truncate">{tx.description || tx.counterparty || tx.category}</p>
-                      <p className="text-xs text-[var(--ink-muted)] mt-0.5 tabular-nums">{tx.category} · {formatLedgerDate(tx.occurredAt)}{tx.counterparty && tx.description ? ` · ${tx.counterparty}` : ''}{tx.reference ? ` · ${tx.reference}` : ''}</p>
-                      {(tx.onChain || tx.fiatEstimated) && (
-                        <p className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-[var(--ink-muted)]">
-                          {tx.onChain && <span className="tabular-nums">{tx.onChain.assetAmount} {tx.onChain.assetSymbol}</span>}
-                          {tx.onChain && <Badge variant={tx.onChain.verified ? 'success' : 'warning'} className="text-[10px] font-semibold">{tx.onChain.verified ? 'Verified on Sui' : 'Not verified, added by you'}</Badge>}
-                          {tx.fiatEstimated && <Badge variant="default" className="text-[10px] font-semibold">Value is an estimate</Badge>}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 sm:gap-3 shrink-0">
-                    <p className={`text-sm sm:text-base font-extrabold tabular-nums ${isExpense ? 'text-[var(--ink-primary)]' : 'text-[var(--accent-positive)]'}`}>
-                      {isExpense ? '−' : '+'}{formatMoney(tx.amountMinor, tx.currency)}
-                    </p>
-                    <button type="button" onClick={() => rememberTransaction(tx)} aria-label={`Remember ${tx.description || tx.category}`} title="Save a memory about this" className="hidden sm:block p-2 rounded-xl text-[var(--ink-muted)] hover:text-[var(--ink-primary)] hover:bg-[var(--surface-sky-tint)] cursor-pointer"><Brain className="w-4 h-4" /></button>
-                    <button type="button" onClick={() => openEditTransaction(tx)} aria-label={`Edit ${tx.description || tx.category}`} className="p-2 rounded-xl text-[var(--ink-muted)] hover:text-[var(--ink-primary)] hover:bg-[var(--surface-sky-tint)] cursor-pointer"><Pencil className="w-4 h-4" /></button>
-                    <button type="button" onClick={() => { setDeleteError(null); setToDelete(tx); }} aria-label={`Delete ${tx.description || tx.category}`} className="p-2 rounded-xl text-[var(--ink-muted)] hover:text-[var(--accent-danger)] hover:bg-[var(--accent-danger-bg)] cursor-pointer"><Trash2 className="w-4 h-4" /></button>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </Card>
-
-      {isImportOpen && (
-        <ImportSuiDialog
-          onClose={() => setIsImportOpen(false)}
-          onImported={(count) => {
-            setIsImportOpen(false);
-            notifyLedgerChanged();
-            toast({ type: 'success', title: count === 1 ? 'Transaction added' : `${count} transactions added`, description: 'Verified on Sui and added to your ledger.' });
-          }}
-        />
-      )}
-      {isOtherChainOpen && (
-        <AddOnChainDialog
-          onClose={() => setIsOtherChainOpen(false)}
-          onUseSui={() => { setIsOtherChainOpen(false); setIsImportOpen(true); }}
-          onSaved={() => {
-            setIsOtherChainOpen(false);
-            notifyLedgerChanged();
-            toast({ type: 'success', title: 'Transaction saved', description: 'Saved as not verified, because Memeora cannot check that chain.' });
-          }}
-        />
-      )}
-
-      <Modal isOpen={toDelete !== null} onClose={() => setToDelete(null)} title="Delete this transaction?" description="This cannot be undone. Your totals will update.">
-        <div className="space-y-4">
-          {toDelete && (
-            <p className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-sky-solid)] p-3 text-sm font-semibold text-[var(--ink-primary)]">
-              {toDelete.description || toDelete.category} · {formatMoney(toDelete.amountMinor, toDelete.currency)} · {formatLedgerDate(toDelete.occurredAt)}
-            </p>
-          )}
-          {deleteError && <p role="alert" className="text-xs text-[var(--accent-danger)]">{deleteError}</p>}
-          <div className="flex items-center justify-end gap-3 border-t border-[var(--border-subtle)] pt-3">
-            <Button type="button" variant="ghost" onClick={() => setToDelete(null)}>Keep it</Button>
-            <Button type="button" variant="danger" isLoading={isDeleting} onClick={() => void handleDelete()}>Delete</Button>
+        <div className="mb-1 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-[var(--border-subtle)] pb-3">
+          <div>
+            <h2 className="text-sm font-bold text-[var(--ink-primary)]">{period ? formatPeriod(period) : 'Latest transactions'}</h2>
+            {ledger.data && <p className="text-xs text-[var(--ink-muted)]">Showing {filtered.length}{transactions.length === LIST_LIMIT ? `, from the latest ${LIST_LIMIT}. Pick a month to see older entries` : ''}.</p>}
           </div>
+          <FreshnessNote updatedAt={ledger.updatedAt} isRefreshing={ledger.isRefreshing} refreshFailed={Boolean(ledger.error)} onRetry={() => void ledger.refresh()} />
         </div>
-      </Modal>
+
+        {ledger.isLoading ? <ListSkeleton rows={5} label="Loading transactions" />
+          : !ledger.data ? <EmptyState className="mt-3" icon={<Page className="h-6 w-6" />} title="Transactions could not be loaded" description="Your saved entries are not affected." actionLabel="Try again" onAction={() => void ledger.refresh()} />
+            : filtered.length === 0 ? (
+              hasActiveFilters
+                ? <EmptyState className="mt-3" icon={<Page className="h-6 w-6" />} title="Nothing matches these filters" description="Try another month, or clear the filters." actionLabel="Clear filters" onAction={clearFilters} />
+                : <EmptyState className="mt-3" icon={<Page className="h-6 w-6" />} title="No transactions yet" description="Add your income and spending. Your totals and the Assistant work from these entries." actionLabel="Add your first transaction" onAction={openAddTransaction} />
+            ) : (
+              <ul aria-label="Transactions" className="divide-y divide-[var(--border-subtle)]">
+                {filtered.map((tx) => {
+                  const name = tx.description || tx.category;
+                  return (
+                    <TxRow
+                      key={tx.id}
+                      tx={tx}
+                      actions={(
+                        <>
+                          <Button variant="ghost" size="sm" onClick={() => rememberTransaction(tx)} aria-label={`Remember ${name}`} leftIcon={<Brain aria-hidden className="h-4 w-4" />}>Remember</Button>
+                          <Button variant="ghost" size="sm" onClick={() => openEditTransaction(tx)} aria-label={`Edit ${name}`} leftIcon={<EditPencil aria-hidden className="h-4 w-4" />}>Edit</Button>
+                          <Button variant="ghost" size="sm" onClick={() => deleteTransaction(tx)} aria-label={`Delete ${name}`} leftIcon={<Trash aria-hidden className="h-4 w-4" />} className="hover:bg-[var(--accent-danger-bg)] hover:text-[var(--accent-danger)]">Delete</Button>
+                        </>
+                      )}
+                    />
+                  );
+                })}
+              </ul>
+            )}
+      </Card>
     </div>
   );
 }

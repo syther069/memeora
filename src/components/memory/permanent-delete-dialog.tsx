@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { CheckCircle, WarningTriangle } from 'iconoir-react';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { SessionWalletGate } from '@/components/memory/session-wallet-gate';
@@ -87,18 +87,18 @@ export function PermanentDeleteDialog({ walletAddress, memory, onClose, onSettle
       <div className="space-y-4">
         {stage.name === 'done' ? (
           <div role="status" className="space-y-2">
-            <p className="flex items-center gap-2 text-sm font-semibold text-[var(--accent-positive)]"><CheckCircle2 aria-hidden className="w-4 h-4" />Deleted on Walrus, confirmed on Sui</p>
+            <p className="flex items-center gap-2 text-sm font-semibold text-[var(--accent-positive)]"><CheckCircle aria-hidden className="w-4 h-4" />Deleted on Walrus, confirmed on Sui</p>
             <p className="text-xs leading-relaxed text-[var(--ink-secondary)]">The text is gone from Memeora, and the Assistant no longer uses it. The encrypted copy can stay downloadable from caches for a while. Sui still shows that a deletion happened, but not what the memory said.</p>
             <p className="break-all font-mono text-[11px] text-[var(--ink-muted)]">Sui transaction {stage.digest}</p>
           </div>
         ) : stage.name === 'pending' ? (
           <p role="status" className="flex items-start gap-2 rounded-xl border border-[var(--accent-warning-border)] bg-[var(--accent-warning-bg)] p-3 text-xs leading-relaxed text-[var(--accent-warning)]">
-            <AlertTriangle aria-hidden className="w-4 h-4 shrink-0" />
+            <WarningTriangle aria-hidden className="w-4 h-4 shrink-0" />
             Your wallet signed, but Sui has not shown the deletion yet, so it is not confirmed. You can close this. Memeora checks again when you reopen the Memory page, and you will not need to sign again.
           </p>
         ) : (
           <>
-            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-sky-solid)] p-3">
+            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-tint)] p-3">
               <p className="text-sm font-semibold text-[var(--ink-primary)]">{memory.text}</p>
               <p className="mt-1 break-all font-mono text-[11px] text-[var(--ink-muted)]">Walrus blob {memory.walrusBlobId}</p>
             </div>

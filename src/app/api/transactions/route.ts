@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { jsonError, jsonSuccess } from '../../../lib/api-response';
 import { INVALID_MODE_MESSAGE, readAppMode } from '@/lib/app-mode';
 import { requireWalletSession } from '@/lib/auth/require-session';
+import { claimIdempotencyKey, readIdempotencyKey, storeIdempotentResponse } from '@/lib/postgres/idempotency';
 import { withWalletTransaction } from '@/lib/postgres/wallet-transaction';
 import { parseTransactionInput } from '@/modules/finance/application/transaction-input';
 import { periodBounds } from '@/modules/finance/domain/calculations';
@@ -66,6 +67,8 @@ export async function POST(request: NextRequest) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) return jsonError('VALIDATION_ERROR', 'Request body must be a JSON object.', 400);
   const parsed = parseTransactionInput(body as Record<string, unknown>);
   if (!parsed.ok) return jsonError('VALIDATION_ERROR', parsed.message, 400);
+  const idempotencyKey = readIdempotencyKey(request);
+  if (idempotencyKey === null) return jsonError('VALIDATION_ERROR', 'The Idempotency-Key header is not valid.', 400);
 
   try {
     const now = new Date();
@@ -81,12 +84,20 @@ export async function POST(request: NextRequest) {
       createdAt: now,
       updatedAt: now,
     });
-    const saved = await withWalletTransaction(session.walletAddress, (client) => client.query(
-      `INSERT INTO transactions(id, user_id, type, amount_minor, currency, category, description, occurred_at, mode, counterparty, reference)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
-      [transaction.id, session.userId, transaction.type, transaction.amount.amountMinor, transaction.amount.currency, transaction.category, transaction.description, transaction.occurredAt.toISOString(), mode, parsed.value.counterparty, parsed.value.reference],
-    ) as Promise<{ rows: DbTransaction[] }>);
-    return jsonSuccess({ transaction: serializeRow(saved.rows[0]) }, 201);
+    const scope = `transactions:${mode}`;
+    const body = await withWalletTransaction(session.walletAddress, async (client) => {
+      const replay = await claimIdempotencyKey(client, session.userId, scope, idempotencyKey);
+      if (replay) return replay.body;
+      const saved = await client.query(
+        `INSERT INTO transactions(id, user_id, type, amount_minor, currency, category, description, occurred_at, mode, counterparty, reference)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+        [transaction.id, session.userId, transaction.type, transaction.amount.amountMinor, transaction.amount.currency, transaction.category, transaction.description, transaction.occurredAt.toISOString(), mode, parsed.value.counterparty, parsed.value.reference],
+      ) as { rows: DbTransaction[] };
+      const created = { transaction: serializeRow(saved.rows[0]) };
+      await storeIdempotentResponse(client, session.userId, scope, idempotencyKey, { status: 201, body: created });
+      return created;
+    });
+    return jsonSuccess(body, 201);
   } catch {
     return jsonError('SERVICE_UNAVAILABLE', 'Unable to save transaction right now.', 503);
   }

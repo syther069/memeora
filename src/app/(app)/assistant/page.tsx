@@ -4,22 +4,13 @@ import * as React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
 import { useToast } from '@/components/ui/toast';
 import Link from 'next/link';
 import { useAppSession } from '@/components/auth/app-session-guard';
 import { formatPeriod } from '@/lib/dates';
 import { currentPeriod, financeApi } from '@/lib/finance-api';
-import {
-  Sparkles,
-  Send,
-  Bot,
-  User,
-  CheckCircle2,
-  Copy,
-  RotateCcw,
-  WifiOff,
-  AlertTriangle,
-} from 'lucide-react';
+import { CheckCircle, Copy, Refresh, Send, Sparks, User, WarningTriangle, WifiOff } from 'iconoir-react';
 
 interface ChatMessage {
   id: string;
@@ -140,7 +131,7 @@ export default function AssistantPage() {
 
       setMessages((prev) => [...prev, botMsg]);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Assistant network error';
+      const msg = err instanceof Error ? err.message : 'The Assistant could not answer. Your question is still in the box, so you can try again.';
       setErrorMessage(msg);
       setMessages((prev) => prev.filter((message) => message.id !== userMsg.id));
       setInputPrompt(text);
@@ -149,13 +140,13 @@ export default function AssistantPage() {
     }
   }, [inputPrompt, isTyping]);
 
-  const handleCopyMessage = (content: string) => {
-    navigator.clipboard?.writeText?.(content);
-    toast({
-      type: 'info',
-      title: 'Answer copied',
-      description: 'The answer is on your clipboard.',
-    });
+  const handleCopyMessage = async (content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      toast({ type: 'info', title: 'Answer copied', description: 'The answer is on your clipboard.' });
+    } catch {
+      toast({ type: 'error', title: 'The answer was not copied', description: 'Your browser did not allow clipboard access.' });
+    }
   };
 
   const handleResetChat = () => {
@@ -164,7 +155,7 @@ export default function AssistantPage() {
   };
 
   return (
-    <div className="space-y-4 max-w-4xl mx-auto flex flex-col h-[calc(100vh-13rem)] min-h-[550px]">
+    <div className="space-y-3 max-w-4xl mx-auto flex flex-col h-[calc(100dvh-12rem-var(--safe-bottom))] lg:h-[calc(100dvh-8.5rem)] min-h-[480px]">
       {/* Offline Banner State */}
       {!isOnline && (
         <div className="p-3.5 px-5 rounded-2xl bg-[var(--surface-well)] border border-[var(--border-subtle)] flex items-center gap-3 text-xs text-[var(--ink-secondary)]">
@@ -174,23 +165,23 @@ export default function AssistantPage() {
       )}
 
       {/* Context Grounding Header Pill */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 px-6 rounded-full bg-white border border-[var(--brand-sky-blue)]/80 shadow-[var(--shadow-sm)] text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 rounded-full border border-[var(--border-card)] bg-[var(--surface-card)] text-xs">
         <div className="flex items-center gap-2.5 text-[var(--ink-secondary)]">
-          <Sparkles className="w-4 h-4 text-[var(--brand-bright-current)] shrink-0" />
+          <Sparks className="w-4 h-4 text-[var(--brand-blue-bright)] shrink-0" />
           <span>
             Answering for <strong className="text-[var(--ink-primary)]">{activePeriodLabel}</strong>
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/memory" className="font-bold text-[var(--brand-deep-current)] hover:underline">Your memories</Link>
+          <Link href="/memory" className="font-bold text-[var(--brand-blue)] hover:underline">Your memories</Link>
           <button
             type="button"
             onClick={handleResetChat}
             title="Start a new conversation"
             aria-label="Start a new conversation"
-            className="p-1 text-[var(--ink-muted)] hover:text-[var(--ink-primary)] rounded-full hover:bg-[var(--surface-sky-tint)] cursor-pointer"
+            className="p-1 text-[var(--ink-muted)] hover:text-[var(--ink-primary)] rounded-full hover:bg-[var(--surface-hover)] cursor-pointer"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <Refresh className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
@@ -198,14 +189,14 @@ export default function AssistantPage() {
       {/* Message Stream Card */}
       <Card
         ref={logRef}
-        className="flex-1 overflow-y-auto p-5 sm:p-7 space-y-5 bg-gradient-to-b from-white via-white to-[#f7faff] border border-[var(--brand-sky-blue)]/60"
+        className="flex-1 overflow-y-auto space-y-5 overscroll-contain"
         role="log"
         aria-live="polite"
         aria-label="Assistant conversation history"
       >
         <div className="flex items-start gap-3.5">
-          <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-[var(--surface-sky-solid)] text-[var(--brand-deep-current)] border border-[var(--brand-sky-blue)]"><Bot className="w-4 h-4" /></div>
-          <p className="max-w-[85%] sm:max-w-xl rounded-2xl rounded-tl-xs border border-[var(--brand-sky-blue)]/50 bg-white p-5 text-sm leading-relaxed text-[var(--ink-body)] shadow-xs">{greeting}</p>
+          <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 bg-[var(--surface-tint)] text-[var(--brand-blue)]"><Sparks className="w-4 h-4" /></div>
+          <p className="max-w-[85%] sm:max-w-xl rounded-[var(--radius-md)] rounded-tl-xs bg-[var(--surface-well)] p-4 text-sm leading-relaxed text-[var(--ink-body)]">{greeting}</p>
         </div>
         {messages.map((msg) => {
           const isUser = msg.sender === 'user';
@@ -216,20 +207,20 @@ export default function AssistantPage() {
               className={`flex items-start gap-3.5 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
             >
               <div
-                className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-xs font-bold shadow-xs ${
+                className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
                   isUser
-                    ? 'bg-[var(--brand-deep-current)] text-white'
-                    : 'bg-[var(--surface-sky-solid)] text-[var(--brand-deep-current)] border border-[var(--brand-sky-blue)]'
+                    ? 'bg-[var(--brand-blue)] text-[var(--ink-inverse)]'
+                    : 'bg-[var(--surface-tint)] text-[var(--brand-blue)]'
                 }`}
               >
-                {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                {isUser ? <User className="w-4 h-4" /> : <Sparks className="w-4 h-4" />}
               </div>
 
               <div
-                className={`group relative max-w-[85%] sm:max-w-xl rounded-2xl p-5 text-sm leading-relaxed shadow-xs ${
+                className={`group relative max-w-[85%] sm:max-w-xl rounded-[var(--radius-md)] p-4 text-sm leading-relaxed ${
                   isUser
-                    ? 'bg-[var(--brand-deep-current)] text-white rounded-tr-xs'
-                    : 'bg-white text-[var(--ink-body)] border border-[var(--brand-sky-blue)]/50 rounded-tl-xs'
+                    ? 'bg-[var(--brand-blue)] text-[var(--ink-inverse)] rounded-tr-xs'
+                    : 'bg-[var(--surface-well)] text-[var(--ink-body)] rounded-tl-xs'
                 }`}
               >
                 {!isUser && (
@@ -237,7 +228,7 @@ export default function AssistantPage() {
                     type="button"
                     onClick={() => handleCopyMessage(msg.content)}
                     aria-label="Copy assistant answer"
-                    className="absolute top-3.5 right-3.5 opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-[var(--ink-muted)] hover:text-[var(--ink-primary)] hover:bg-[var(--surface-sky-solid)] transition-all cursor-pointer"
+                    className="absolute top-2.5 right-2.5 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 focus-visible:opacity-100 p-1.5 rounded-lg text-[var(--ink-muted)] hover:text-[var(--ink-primary)] hover:bg-[var(--surface-tint)] transition-[opacity,color,background-color] cursor-pointer"
                   >
                     <Copy className="w-3.5 h-3.5" />
                   </button>
@@ -247,9 +238,9 @@ export default function AssistantPage() {
 
                 {/* Structured Calculation Context Card */}
                 {msg.calculationContext && (
-                  <div className="mt-4 pt-3.5 border-t border-[var(--brand-sky-blue)]/40 space-y-2.5 text-xs bg-[var(--surface-sky-solid)]/60 p-3.5 rounded-xl border">
-                    <div className="flex items-center gap-2 text-[var(--brand-deep-current)] font-bold">
-                      <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <div className="mt-3 space-y-2.5 rounded-[var(--radius-sm)] bg-[var(--surface-elevated)] p-3.5 text-xs">
+                    <div className="flex items-center gap-2 text-[var(--brand-blue)] font-bold">
+                      <CheckCircle className="w-4 h-4 shrink-0" />
                       <span>{msg.calculationContext.verdict}</span>
                     </div>
 
@@ -260,19 +251,19 @@ export default function AssistantPage() {
                       )}
                     </div>
                     {(msg.calculationContext.incomeFormatted || msg.calculationContext.spendingFormatted || msg.calculationContext.netCashFlowFormatted) && <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] font-semibold text-[var(--ink-muted)]"><span>Income: {msg.calculationContext.incomeFormatted}</span><span>Expenses: {msg.calculationContext.spendingFormatted}</span><span>Net: {msg.calculationContext.netCashFlowFormatted}</span></div>}
-                    {msg.calculationContext.recordWindowDescription && <p className="text-[10px] text-[var(--ink-muted)]">{msg.calculationContext.recordWindowDescription}</p>}
-                    {msg.memoryStatus && <p className="text-[10px] text-[var(--ink-muted)]">Memory: {msg.memoryStatus === 'used' ? (msg.memorySource === 'walrus' ? 'recalled from your Walrus memories' : 'from Memeora\'s saved list, because Walrus did not answer this time') : msg.memoryStatus === 'none_found' ? 'no memory matched this question' : msg.memoryStatus === 'not_consented' ? 'off. Turn it on in the Memory page' : 'could not be loaded for this answer'}{msg.isFallback ? ' · Answered without the AI model; the sums are unaffected' : ''}</p>}
+                    {msg.calculationContext.recordWindowDescription && <p className="text-[11px] text-[var(--ink-muted)]">{msg.calculationContext.recordWindowDescription}</p>}
+                    {msg.memoryStatus && <p className="text-[11px] font-medium text-[var(--ink-secondary)]">Memory: {msg.memoryStatus === 'used' ? (msg.memorySource === 'walrus' ? 'recalled from your Walrus memories' : 'from Memeora\'s saved list, because Walrus did not answer this time') : msg.memoryStatus === 'none_found' ? 'no memory matched this question' : msg.memoryStatus === 'not_consented' ? 'off. Turn it on in the Memory page' : 'could not be loaded for this answer'}{msg.isFallback ? ' · Answered without the AI model; the sums are unaffected' : ''}</p>}
 
                     {/* Cited Walrus Memories Pills */}
                     {msg.recalledMemories && msg.recalledMemories.length > 0 && (
-                      <div className="pt-2 border-t border-[var(--brand-sky-blue)]/30 flex flex-wrap gap-1.5">
-                        <span className="text-[10px] text-[var(--ink-secondary)] font-bold self-center">
+                      <div className="pt-2 border-t border-[var(--brand-blue-soft)]/30 flex flex-wrap gap-1.5">
+                        <span className="text-[11px] text-[var(--ink-secondary)] font-semibold self-center">
                           Your memories used:
                         </span>
                         {msg.recalledMemories.map((m) => (
                           <span
                             key={m.id}
-                            className="px-2.5 py-0.5 rounded-full bg-white border border-[var(--brand-sky-blue)] text-[10px] text-[var(--brand-deep-current)] font-medium"
+                            className="px-2.5 py-0.5 rounded-full bg-[var(--surface-tint)] text-[11px] text-[var(--brand-blue)] font-medium"
                           >
                             {m.text}
                           </span>
@@ -284,7 +275,7 @@ export default function AssistantPage() {
 
                 <span
                   className={`block text-[11px] text-right mt-2 tabular-nums font-medium ${
-                    isUser ? 'text-[var(--brand-sky-blue)]' : 'text-[var(--ink-muted)]'
+                    isUser ? 'text-[var(--ink-on-blue-muted)]' : 'text-[var(--ink-muted)]'
                   }`}
                 >
                   {msg.timestamp}
@@ -296,11 +287,11 @@ export default function AssistantPage() {
 
         {isTyping && (
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-[var(--surface-sky-solid)] text-[var(--brand-deep-current)] flex items-center justify-center">
-              <Bot className="w-4 h-4 animate-pulse" />
+            <div className="w-9 h-9 rounded-full bg-[var(--surface-tint)] text-[var(--brand-blue)] flex items-center justify-center">
+              <Sparks className="w-4 h-4" />
             </div>
-            <div className="bg-[var(--surface-card-subtle)] border border-[var(--border-subtle)] rounded-full px-4 py-2.5 text-xs text-[var(--ink-muted)] flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[var(--brand-bright-current)] animate-ping" />
+            <div role="status" className="rounded-full bg-[var(--surface-well)] px-4 py-2.5 text-xs text-[var(--ink-secondary)] flex items-center gap-2">
+              <Spinner size={14} className="text-[var(--brand-blue)]" />
               <span>Checking your records and memories…</span>
             </div>
           </div>
@@ -308,14 +299,14 @@ export default function AssistantPage() {
       </Card>
 
       {/* Suggested Quick Prompts */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1" role="group" aria-label="Suggested questions">
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="group" aria-label="Suggested questions">
         {suggestedPrompts.map((prompt) => (
           <button
             key={prompt}
             type="button"
             disabled={isTyping}
             onClick={() => handleSendMessage(prompt)}
-            className="px-4 py-2 rounded-full bg-white hover:bg-[var(--surface-sky-solid)] border border-[var(--brand-sky-blue)] text-xs text-[var(--ink-primary)] font-bold shrink-0 transition-all cursor-pointer shadow-xs text-left disabled:opacity-50"
+            className="h-9 px-3.5 rounded-full border border-[var(--border-pill)] text-xs text-[var(--ink-primary)] font-medium shrink-0 transition-colors cursor-pointer text-left hover:border-[var(--border-strong)] hover:bg-[var(--surface-hover)] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {prompt}
           </button>
@@ -325,7 +316,7 @@ export default function AssistantPage() {
       {/* Error Alert if needed */}
       {errorMessage && (
         <div className="p-3 px-4 rounded-xl bg-[var(--accent-danger-bg)] border border-[var(--accent-danger-border)] flex items-center gap-2 text-xs text-[var(--accent-danger)]">
-          <AlertTriangle className="w-4 h-4 shrink-0" />
+          <WarningTriangle className="w-4 h-4 shrink-0" />
           <span>{errorMessage} Your question is back in the box, so you can send it again.</span>
         </div>
       )}
@@ -339,7 +330,7 @@ export default function AssistantPage() {
           onChange={(e) => setInputPrompt(e.target.value)}
           disabled={isTyping}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && !isTyping) {
+            if (e.key === 'Enter' && !isTyping && !e.nativeEvent.isComposing) {
               void handleSendMessage();
             }
           }}
@@ -353,7 +344,7 @@ export default function AssistantPage() {
           disabled={!inputPrompt.trim() || isTyping}
           leftIcon={<Send className="w-4 h-4" />}
         >
-          Send
+          Send question
         </Button>
       </div>
     </div>

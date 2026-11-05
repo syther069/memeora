@@ -73,6 +73,8 @@ vi.mock('@mysten-incubation/memwal', async (importOriginal) => ({
 import { POST as assistantRoute } from '@/app/api/assistant/chat/route';
 import { GET as budgetsGet, POST as budgetsPost } from '@/app/api/budgets/route';
 import { GET as businessGet, PUT as businessPut } from '@/app/api/business/route';
+import { GET as overviewGet } from '@/app/api/overview/route';
+import { GET as memorySummaryRoute } from '@/app/api/memory/route';
 import { POST as onboardingPost, GET as onboardingGet } from '@/app/api/onboarding/route';
 import { PUT as modePut } from '@/app/api/profile/mode/route';
 import { POST as rememberRoute } from '@/app/api/memory/remember/route';
@@ -89,13 +91,14 @@ import { createMigratedDatabase, enableConsent, giveReadyMemoryAccount, signIn, 
 
 type Mode = 'personal' | 'business';
 
-function request(method: string, url: string, cookie: string, mode: Mode | string | null, body?: unknown) {
+function request(method: string, url: string, cookie: string, mode: Mode | string | null, body?: unknown, extraHeaders: Record<string, string> = {}) {
   return new NextRequest(`http://localhost:3000${url}`, {
     method,
     headers: {
       'content-type': 'application/json',
       cookie: `${WALLET_SESSION_COOKIE}=${cookie}`,
       ...(mode ? { 'x-memeora-mode': mode } : {}),
+      ...extraHeaders,
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
@@ -218,6 +221,92 @@ describe('workspaces stay separate', () => {
     expect((await modePut(request('PUT', '/api/profile/mode', cookie, null, { mode: 'personal' }))).status).toBe(200);
     expect((await dataOf(await onboardingGet(request('GET', '/api/onboarding', cookie, null)))).profile.active_mode).toBe('personal');
     expect((await modePut(request('PUT', '/api/profile/mode', cookie, null, { mode: 'nope' }))).status).toBe(400);
+  });
+});
+
+describe('retrying a write', () => {
+  const KEY = { 'idempotency-key': 'retry-key-0000001' };
+
+  it('adds a transaction once when the same key is sent twice, and returns the same entry', async () => {
+    const { cookie } = await signedIn();
+    const send = (key: Record<string, string>) => transactionsPost(request('POST', '/api/transactions', cookie, 'personal', expense('Groceries', 700), key));
+    const first = await send(KEY);
+    const second = await send(KEY);
+    expect([first.status, second.status]).toEqual([201, 201]);
+    const [a, b] = [await dataOf(first), await dataOf(second)];
+    expect(b.transaction.id).toBe(a.transaction.id);
+    expect(await listed(cookie, 'personal')).toHaveLength(1);
+
+    // A different key is a different entry, and no key behaves as before.
+    await send({ 'idempotency-key': 'retry-key-0000002' });
+    await transactionsPost(request('POST', '/api/transactions', cookie, 'personal', expense('Groceries', 700)));
+    expect(await listed(cookie, 'personal')).toHaveLength(3);
+  });
+
+  it('keeps keys per wallet and per workspace, and refuses a malformed key', async () => {
+    const { cookie } = await signedIn();
+    const other = await signedIn();
+    await transactionsPost(request('POST', '/api/transactions', cookie, 'personal', expense('Groceries', 700), KEY));
+    await transactionsPost(request('POST', '/api/transactions', other.cookie, 'personal', expense('Dining', 900), KEY));
+    await transactionsPost(request('POST', '/api/transactions', cookie, 'business', expense('Payroll', 900), KEY));
+    expect(await listed(other.cookie, 'personal')).toHaveLength(1);
+    expect(await listed(cookie, 'business')).toHaveLength(1);
+    expect((await transactionsPost(request('POST', '/api/transactions', cookie, 'personal', expense('Groceries', 700), { 'idempotency-key': 'bad key!' }))).status).toBe(400);
+  });
+
+  it('adds money to a goal once, creates a goal once, and leaves no claim behind a failed write', async () => {
+    const { cookie } = await signedIn();
+    const post = (body: unknown, key: Record<string, string>) => budgetsPost(request('POST', '/api/budgets', cookie, 'personal', body, key));
+    const create = { action: 'create-goal', name: 'Laptop', targetAmountMinor: 10000, currency: 'USD' };
+    await post(create, KEY);
+    const repeat = await post(create, KEY);
+    expect(repeat.status).toBe(201);
+    const goals = (await dataOf(await budgetsGet(request('GET', `/api/budgets?period=${currentPeriod()}`, cookie, 'personal')))).savingsGoals;
+    expect(goals).toHaveLength(1);
+
+    const contribute = { action: 'contribute-goal', goalId: goals[0].id, amountMinor: 500 };
+    const addKey = { 'idempotency-key': 'contribute-key-01' };
+    await post(contribute, addKey);
+    const again = await dataOf(await post(contribute, addKey));
+    expect(again.savingsGoal.currentAmountMinor).toBe(500);
+
+    // A refused write does not use up the key: fixing the amount and retrying works.
+    const failKey = { 'idempotency-key': 'contribute-key-02' };
+    expect((await post({ ...contribute, amountMinor: -1 }, failKey)).status).toBe(400);
+    expect((await dataOf(await post(contribute, failKey))).savingsGoal.currentAmountMinor).toBe(1000);
+  });
+});
+
+describe('overview charts', () => {
+  it('sums recent months and this month\'s categories per workspace, in order', async () => {
+    const { cookie } = await signedIn();
+    const period = currentPeriod();
+    await transactionsPost(request('POST', '/api/transactions', cookie, 'personal', expense('Dining', 700)));
+    await transactionsPost(request('POST', '/api/transactions', cookie, 'personal', expense('Dining', 300)));
+    await transactionsPost(request('POST', '/api/transactions', cookie, 'personal', expense('Groceries', 5000)));
+    await transactionsPost(request('POST', '/api/transactions', cookie, 'personal', { type: 'income', amountMinor: 9000, currency: 'USD', category: 'Salary' }));
+    await transactionsPost(request('POST', '/api/transactions', cookie, 'business', expense('Payroll', 111)));
+
+    const data = await dataOf(await overviewGet(request('GET', `/api/overview?period=${period}`, cookie, 'personal')));
+    expect(data.periods).toHaveLength(6);
+    expect(data.periods.at(-1)).toBe(period);
+    expect(data.months).toEqual([{ period, currency: 'USD', incomeMinor: 9000, expenseMinor: 6000 }]);
+    expect(data.categories).toEqual([
+      { currency: 'USD', category: 'Groceries', amountMinor: 5000 },
+      { currency: 'USD', category: 'Dining', amountMinor: 1000 },
+    ]);
+    expect((await overviewGet(request('GET', '/api/overview?period=2026-13', cookie, 'personal'))).status).toBe(400);
+  });
+
+  it('gives the overview only that workspace\'s newest rules', async () => {
+    const { wallet, cookie } = await signedIn();
+    await enableConsent(cookie);
+    await giveReadyMemoryAccount(db.instance!, wallet);
+    await rememberRoute(request('POST', '/api/memory/remember', cookie, 'business', { category: 'goal', text: 'Keep six months of runway' }));
+    const business = await dataOf(await memorySummaryRoute(request('GET', '/api/memory', cookie, 'business')));
+    const personal = await dataOf(await memorySummaryRoute(request('GET', '/api/memory', cookie, 'personal')));
+    expect(business.recent.map((rule: { text: string }) => rule.text)).toEqual(['Keep six months of runway']);
+    expect(personal.recent).toEqual([]);
   });
 });
 

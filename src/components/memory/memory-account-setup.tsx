@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { KeyRound } from 'lucide-react';
+import { Key } from 'iconoir-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { SessionWalletGate } from '@/components/memory/session-wallet-gate';
@@ -76,9 +76,9 @@ export function MemoryAccountSetup({ walletAddress, status, onReady }: {
   const hasAccount = status === 'needs_delegate';
 
   return (
-    <Card className="p-5 sm:p-6 border-[var(--brand-sky-blue)]">
+    <Card className="p-5 sm:p-6 border-[var(--brand-blue-soft)]">
       <div className="flex items-start gap-3">
-        <KeyRound aria-hidden className="w-5 h-5 shrink-0 mt-0.5 text-[var(--brand-deep-current)]" />
+        <Key aria-hidden className="w-5 h-5 shrink-0 mt-0.5 text-[var(--brand-blue)]" />
         <div className="min-w-0 flex-1 space-y-3">
           <div>
             <h3 className="text-sm font-bold text-[var(--ink-primary)]">{hasAccount ? 'Approve Memeora on your Walrus account' : 'Create your Walrus account'}</h3>

@@ -11,35 +11,13 @@ export interface EmptyStateProps {
   className?: string;
 }
 
-export function EmptyState({
-  icon,
-  title,
-  description,
-  actionLabel,
-  onAction,
-  className,
-}: EmptyStateProps) {
+export function EmptyState({ icon, title, description, actionLabel, onAction, className }: EmptyStateProps) {
   return (
-    <div
-      className={cn(
-        'flex flex-col items-center justify-center p-8 sm:p-12 text-center rounded-2xl border border-dashed border-[var(--brand-sky-blue)]/80 bg-[var(--surface-cloud-solid)]/60',
-        className
-      )}
-    >
-      {icon && (
-        <div className="w-14 h-14 rounded-2xl bg-white border border-[var(--brand-sky-blue)]/60 flex items-center justify-center text-[var(--brand-deep-current)] mb-4 shadow-xs">
-          {icon}
-        </div>
-      )}
-      <h4 className="text-base sm:text-lg font-bold text-[var(--ink-primary)] mb-1.5">{title}</h4>
-      <p className="text-xs sm:text-sm text-[var(--ink-muted)] max-w-sm mb-6 leading-relaxed">
-        {description}
-      </p>
-      {actionLabel && onAction && (
-        <Button variant="primary" size="pill" onClick={onAction}>
-          {actionLabel}
-        </Button>
-      )}
+    <div className={cn('flex flex-col items-center justify-center p-8 text-center rounded-[var(--radius-md)] bg-[var(--surface-well)]', className)}>
+      {icon && <div className="mb-3 text-[var(--brand-blue)]">{icon}</div>}
+      <h4 className="text-sm font-bold text-[var(--ink-primary)] mb-1">{title}</h4>
+      <p className={cn('text-xs text-[var(--ink-secondary)] max-w-sm leading-relaxed', actionLabel && onAction && 'mb-4')}>{description}</p>
+      {actionLabel && onAction && <Button variant="primary" size="sm" onClick={onAction}>{actionLabel}</Button>}
     </div>
   );
 }
