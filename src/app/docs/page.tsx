@@ -25,7 +25,7 @@ const SECTIONS: DocsSection[] = [
         <ol>
           <li>Select Connect a wallet and choose your Sui wallet.</li>
           <li>Sign the message your wallet shows you. It is free: it sends no transaction and spends no SUI.</li>
-          <li>Choose a workspace and currency, and decide whether to turn memory on.</li>
+          <li>Add a transaction, then turn memory on when you are ready.</li>
         </ol>
       </>
     ),

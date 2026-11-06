@@ -1,7 +1,7 @@
 /**
  * Seeds 10 consumer-finance memories on Walrus Mainnet through the official
  * MemWal SDK, recalls each one to confirm it is indexed, and writes an
- * evidence file for memory.md.
+ * evidence file.
  *
  * Usage (Node >= 22.6 strips the TypeScript types natively):
  *   node scripts/seed-mainnet-memories.ts [--wallet <0x Sui address>]

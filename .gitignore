@@ -42,16 +42,8 @@ next-env.d.ts
 # Keep the env template public; every real .env file stays ignored.
 !.env.example
 
-# Local scratch output
+# Local output
 /tmp/
 
-# Installed agent skills (reproducible from skills-lock.json)
-/.agents/
-.taste-skill/
-
-# Third-party reference documents and source archives (not redistributed)
-/*.pdf
-/Roboto.zip
-
-# Local editor and agent settings
-.claude/settings.local.json
+# Video files
+*.mp4

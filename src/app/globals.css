@@ -11,7 +11,7 @@
 :root {
   color-scheme: light;
 
-  /* Memeora palette from design.md: cream is the canvas, royal blue carries the brand. */
+  /* Memeora palette: cream is the canvas, royal blue carries the brand. */
   --brand-blue: #014baa;
   --brand-blue-hover: #013c8a;
   --brand-blue-pressed: #012f6c;

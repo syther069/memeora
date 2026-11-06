@@ -1,6 +1,4 @@
 -- Target PostgreSQL schema for provider-neutral wallet-authenticated Memeora.
--- This is additive alongside the legacy Supabase source schema. Do not apply it
--- to or mutate the source project as part of the migration export process.
 
 CREATE TABLE IF NOT EXISTS app_users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

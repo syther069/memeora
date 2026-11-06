@@ -12,7 +12,7 @@ import { createTatumSuiGrpcClient, fromProtoValue, tatumCall } from './tatum-sui
 const MEMWAL_ACCOUNT_TYPE_SUFFIX = '::account::MemWalAccount';
 const WALRUS_BLOB_TYPE_SUFFIX = '::blob::Blob';
 const WALRUS_METADATA_TYPE_SUFFIX = '::metadata::Metadata';
-// shortcut: blobs are found by paging the MemWal owner's objects, at most
+// Limitation: blobs are found by paging the MemWal owner's objects, at most
 // MAX_OWNER_PAGES × OWNER_PAGE_SIZE objects. Store each blob's Sui object ID
 // once the owner holds more objects than that.
 const OWNER_PAGE_SIZE = 500;

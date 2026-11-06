@@ -68,7 +68,7 @@ export const CURRENCY_LABELS: Readonly<Record<CurrencyCode, string>> = { USD: 'U
 
 /**
  * The one money formatter. Intl only accepts three-letter ISO codes, so tokens are written out.
- * shortcut: every currency keeps two decimals, so a token amount under 0.01 can't be a ledger value; exact on-chain amounts are stored separately.
+ * Limitation: every currency keeps two decimals, so a token amount under 0.01 can't be a ledger value; exact on-chain amounts are stored separately.
  */
 export function formatMinorUnits(amountMinor: number, currency: string): string {
   if (currency === 'USD') return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amountMinor / 100);

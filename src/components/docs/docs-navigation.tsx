@@ -71,7 +71,7 @@ function useActiveSection(ids: string[]) {
   const select = React.useCallback((id: string) => {
     clickedTarget.current = id;
     setActive(id);
-    // shortcut: browsers without scrollend release after this delay; remove when all support it.
+    // Browsers without scrollend release after this delay; remove when all support it.
     window.setTimeout(() => { if (clickedTarget.current === id) clickedTarget.current = null; }, 1200);
   }, []);
 
