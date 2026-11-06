@@ -22,7 +22,7 @@ export function useSignOut() {
       clearFinanceCache();
       // After a page reload the wallet may not be connected in this tab; nothing to disconnect then.
       await dAppKit.disconnectWallet().catch(() => undefined);
-      router.replace('/sign-in');
+      router.replace('/');
       router.refresh();
     } catch (cause) {
       toast({ type: 'error', title: 'You are still signed in', description: cause instanceof Error ? cause.message : 'Please try again.' });

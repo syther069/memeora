@@ -123,8 +123,8 @@ export async function financeApi<T>(path: string, init?: FinanceApiInit): Promis
   } catch {
     throw new FinanceApiError('The finance service returned an unreadable response.', false, response.status);
   }
-  // An expired or revoked session goes back to sign-in; the session guard only checks on entry.
-  if (response.status === 401 && typeof window !== 'undefined') window.location.replace(`${window.location.origin}/sign-in`);
+  // An expired or revoked session goes back to the landing page; the session guard only checks on entry.
+  if (response.status === 401 && typeof window !== 'undefined') window.location.replace(`${window.location.origin}/`);
   if (!response.ok || payload.success !== true || payload.data === undefined) {
     throw new FinanceApiError(
       payload.error?.message ?? 'The finance service could not complete this request.',

@@ -1,7 +1,7 @@
 'use client';
 
+import { ConnectWalletButton } from '@/components/auth/connect-wallet';
 import * as React from 'react';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { HelpCircle, Search, Wallet } from 'iconoir-react';
 import { Button, linkButtonClass } from '@/components/ui/button';
@@ -62,7 +62,7 @@ export function Header({ onOpenCommand, onOpenGuide }: { onOpenCommand: () => vo
         </Button>
         {walletAddress
           ? <AccountMenu walletAddress={walletAddress} />
-          : <Link href={`/sign-in?next=${encodeURIComponent(pathname)}`} className={linkButtonClass('primary', 'sm')}><Wallet aria-hidden className="h-4 w-4" />Connect wallet</Link>}
+          : <ConnectWalletButton className={linkButtonClass('primary', 'sm')}><Wallet aria-hidden className="h-4 w-4" />Connect wallet</ConnectWalletButton>}
       </div>
     </header>
   );

@@ -1,3 +1,4 @@
+import { ConnectWalletButton } from '@/components/auth/connect-wallet';
 import type { CSSProperties, ReactNode } from 'react';
 import Image, { type StaticImageData } from 'next/image';
 import Link from 'next/link';
@@ -179,6 +180,7 @@ const SITEMAP = [
   { href: '/assistant', label: 'Assistant' },
   { href: '/memory', label: 'Memory' },
   { href: '/verification', label: 'Proof' },
+  { href: '/docs', label: 'Docs' },
 ];
 
 export default function LandingPage() {
@@ -200,7 +202,8 @@ export default function LandingPage() {
             <nav aria-label="Main" className="flex items-center gap-1 sm:gap-2">
               <AnimatedLink href="#ask" variant="center" className="hit mx-3 hidden py-1 text-sm font-medium text-[var(--ink-primary)] md:inline-flex">Ask before you buy</AnimatedLink>
               <AnimatedLink href="#where" variant="center" className="hit mx-3 hidden py-1 text-sm font-medium text-[var(--ink-primary)] md:inline-flex">Where it lives</AnimatedLink>
-              <Link href="/sign-in" className={linkButtonClass('primary', 'sm')}><Wallet aria-hidden className="h-4 w-4" />Connect a wallet</Link>
+              <AnimatedLink href="/docs" variant="center" className="hit mx-3 hidden py-1 text-sm font-medium text-[var(--ink-primary)] md:inline-flex">Docs</AnimatedLink>
+              <ConnectWalletButton className={linkButtonClass('primary', 'sm')}><Wallet aria-hidden className="h-4 w-4" />Connect a wallet</ConnectWalletButton>
             </nav>
           </header>
 
@@ -304,7 +307,7 @@ export default function LandingPage() {
               <h2 className={`max-w-3xl ${HEADING}`} {...rise(0)}>See your month, then save your first rule.</h2>
               <div className="mt-8 flex flex-wrap gap-3" {...rise(1)}>
                 <Link href="/dashboard" className={linkButtonClass('cream', 'lg')}>Open the dashboard<ArrowRight aria-hidden className="h-4 w-4" /></Link>
-                <Link href="/sign-in" className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-[var(--ink-on-blue-muted)] px-6 text-sm font-semibold transition-colors hover:bg-white/10">Connect a wallet</Link>
+                <ConnectWalletButton className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-[var(--ink-on-blue-muted)] px-6 text-sm font-semibold transition-colors hover:bg-white/10">Connect a wallet</ConnectWalletButton>
               </div>
             </div>
             <nav aria-label="Pages" className="on-blue flex flex-col items-start gap-1 text-[clamp(1.5rem,3vw,2.25rem)] font-bold leading-tight tracking-tight" {...rise(2)}>

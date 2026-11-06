@@ -1,14 +1,17 @@
 import { cn } from '@/lib/utils';
 
-/** Memeora's mark: an M resting on a ledger rule, with a dot for the memory it keeps. */
+/** Memeora's logo. On royal blue surfaces use tone="cream", as a blue tile would disappear there. Keep in step with src/app/icon.svg. */
 export function BrandMark({ className, tone = 'blue' }: { className?: string; tone?: 'blue' | 'cream' }) {
-  const ground = tone === 'blue' ? 'bg-[var(--brand-blue)] text-[var(--brand-cream)]' : 'bg-[var(--brand-cream)] text-[var(--brand-blue)]';
+  const [tile, ink] = tone === 'blue' ? ['var(--brand-blue)', 'var(--brand-cream)'] : ['var(--brand-cream)', 'var(--brand-blue)'];
   return (
-    <span aria-hidden className={cn('grid h-10 w-10 shrink-0 place-items-center rounded-[var(--radius-sm)]', ground, className)}>
-      <svg viewBox="0 0 24 24" className="h-[62%] w-[62%]" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M4 16V5l8 8 8-8v11" />
-        <path d="M4 21h11" />
-        <circle cx="20" cy="21" r="1.4" fill="currentColor" stroke="none" />
+    <span aria-hidden className={cn('grid h-10 w-10 shrink-0 place-items-center', className)}>
+      <svg viewBox="0 0 100 100" className="h-full w-full">
+        <rect width="100" height="100" rx="24" fill={tile} />
+        <g fill="none" stroke={ink} strokeWidth="7" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M24 60V27l26 26 26-26v33" />
+          <path d="M24 77h41" />
+        </g>
+        <circle cx="76" cy="77" r="4.5" fill={ink} />
       </svg>
     </span>
   );

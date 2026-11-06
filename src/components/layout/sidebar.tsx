@@ -3,7 +3,8 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Brain, List, PiggyBank, ShieldCheck, Sparks, ViewGrid } from 'iconoir-react';
+import { List, PiggyBank, ShieldCheck, Sparks, ViewGrid } from 'iconoir-react';
+import { WalrusIcon } from '@/components/brand/integration-logo';
 import { useAppSession } from '@/components/auth/app-session-guard';
 import { cn } from '@/lib/utils';
 import { BrandMark } from './brand-mark';
@@ -18,14 +19,14 @@ export function Sidebar() {
     { name: 'Transactions', href: '/transactions', icon: List },
     { name: mode === 'business' ? 'Spend limit & goals' : 'Budgets & goals', href: '/budgets', icon: PiggyBank },
     { name: 'Assistant', href: '/assistant', icon: Sparks },
-    { name: 'Memory', href: '/memory', icon: Brain },
+    { name: 'Memory', href: '/memory', icon: WalrusIcon },
     { name: 'On-chain proof', href: '/verification', icon: ShieldCheck },
   ];
 
   return (
     <aside className="on-blue hidden lg:flex lg:flex-col w-64 shrink-0 m-3 mr-0 h-[calc(100dvh-1.5rem)] sticky top-3 z-20 rounded-[var(--radius-xl)] bg-[var(--surface-rail)] text-[var(--ink-inverse)]">
       <div className="flex h-20 items-center px-5">
-        <Link href={overview} className="flex items-center gap-3 rounded-[var(--radius-sm)]">
+        <Link href="/" className="flex items-center gap-3 rounded-[var(--radius-sm)]">
           <BrandMark tone="cream" />
           <span>
             <span className="block text-lg font-bold leading-tight tracking-tight">Memeora</span>

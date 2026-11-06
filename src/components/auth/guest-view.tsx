@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { ConnectWalletButton } from '@/components/auth/connect-wallet';
 import { usePathname } from 'next/navigation';
 import { ArrowRight, Brain, List, PiggyBank, ShieldCheck, Sparks, Wallet } from 'iconoir-react';
 import { linkButtonClass } from '@/components/ui/button';
@@ -26,7 +26,6 @@ const OVERVIEW_STEPS = [
 export function GuestView() {
   const pathname = usePathname();
   const { mode } = useAppSession();
-  const signInHref = `/sign-in?next=${encodeURIComponent(pathname)}`;
   const page = PAGES[pathname];
 
   if (page) {
@@ -36,7 +35,7 @@ export function GuestView() {
         <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[var(--surface-tint)] text-[var(--brand-blue)]"><Icon aria-hidden className="h-6 w-6" /></span>
         <h2 className="mt-4 text-xl font-bold tracking-tight text-[var(--ink-primary)]">{page.title}</h2>
         <p className="mt-2 text-sm leading-relaxed text-[var(--ink-secondary)]">{page.body}</p>
-        <Link href={signInHref} className={linkButtonClass('primary', 'md', 'mt-5')}><Wallet aria-hidden className="h-4 w-4" />Connect a wallet to continue</Link>
+        <ConnectWalletButton className={linkButtonClass('primary', 'md', 'mt-5')}><Wallet aria-hidden className="h-4 w-4" />Connect a wallet to continue</ConnectWalletButton>
       </Card>
     );
   }
@@ -48,7 +47,7 @@ export function GuestView() {
           <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">{mode === 'business' ? 'See your revenue, burn and runway.' : 'See your month at a glance.'}</h2>
           <p className="mt-2 text-sm leading-relaxed text-[var(--ink-on-blue-muted)]">You are looking around without a wallet, so there are no figures to show yet. Connect one and your records appear here. It is free, and there is no password.</p>
         </div>
-        <Link href={signInHref} className={linkButtonClass('cream', 'lg', 'shrink-0')}>Connect a wallet<ArrowRight aria-hidden className="h-4 w-4" /></Link>
+        <ConnectWalletButton className={linkButtonClass('cream', 'lg', 'shrink-0')}>Connect a wallet<ArrowRight aria-hidden className="h-4 w-4" /></ConnectWalletButton>
       </Card>
       <section aria-label="How Memeora works" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {OVERVIEW_STEPS.map(({ icon: Icon, title, body }) => (

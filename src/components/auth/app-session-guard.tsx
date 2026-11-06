@@ -69,7 +69,7 @@ export function AppSessionGuard({ children }: { children: React.ReactNode }) {
         if (!result.data.authenticated) {
           setState('unauthenticated');
           // Setup needs an account; everything else can be looked at first.
-          if (firstPath.current === '/onboarding') router.replace('/sign-in?next=%2Fonboarding');
+          if (firstPath.current === '/onboarding') router.replace('/');
           return;
         }
         const onboarding = await onboardingResponse.json();

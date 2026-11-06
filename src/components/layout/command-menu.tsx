@@ -1,5 +1,6 @@
 'use client';
 
+import { ConnectWalletDialog } from '@/components/auth/connect-wallet';
 import * as React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, useReducedMotion } from 'framer-motion';
@@ -23,6 +24,7 @@ interface CommandItem {
 /** A quick way to reach everything the app can do. Ctrl or Cmd + K opens it from anywhere. */
 export function CommandMenu({ isOpen, onClose, onOpenGuide }: { isOpen: boolean; onClose: () => void; onOpenGuide: () => void }) {
   const router = useRouter();
+  const [isWalletOpen, setIsWalletOpen] = React.useState(false);
   const pathname = usePathname();
   const { mode, setMode, isGuest } = useAppSession();
   const { openAddTransaction, openImportSui, openOtherChain } = useLedger();
@@ -38,7 +40,7 @@ export function CommandMenu({ isOpen, onClose, onOpenGuide }: { isOpen: boolean;
     const go = (href: string) => () => router.push(href);
     if (isGuest) {
       return [
-        { id: 'connect', group: 'Actions', label: 'Connect a wallet', keywords: 'sign in login slush suiet', icon: Wallet, run: go(`/sign-in?next=${encodeURIComponent(pathname)}`) },
+        { id: 'connect', group: 'Actions', label: 'Connect a wallet', keywords: 'sign in login slush suiet', icon: Wallet, run: () => setIsWalletOpen(true) },
         { id: 'guide', group: 'Actions', label: 'Open the guide', keywords: 'help how tutorial', icon: HelpCircle, run: onOpenGuide },
         { id: 'go-overview', group: 'Go to', label: 'Overview', keywords: 'dashboard home', icon: ViewGrid, run: go(`/${mode}`) },
         { id: 'go-transactions', group: 'Go to', label: 'Transactions', keywords: 'ledger', icon: List, run: go('/transactions') },
@@ -95,7 +97,7 @@ export function CommandMenu({ isOpen, onClose, onOpenGuide }: { isOpen: boolean;
     listRef.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' });
   }, [activeIndex]);
 
-  if (!isOpen) return null;
+  if (!isOpen) return <ConnectWalletDialog isOpen={isWalletOpen} onClose={() => setIsWalletOpen(false)} />;
 
   const close = () => {
     setQuery('');

@@ -247,6 +247,35 @@ body {
 .intro {
   display: none;
 }
+.docs-prose {
+  font-size: 1rem;
+  line-height: 1.7;
+}
+.docs-prose > * + * {
+  margin-top: 0.875rem;
+}
+.docs-prose h3 {
+  margin-top: 1.75rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--ink-primary);
+}
+.docs-prose ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+}
+.docs-prose ol {
+  list-style: decimal;
+  padding-left: 1.25rem;
+}
+.docs-prose li + li {
+  margin-top: 0.375rem;
+}
+.docs-prose a {
+  color: var(--brand-blue);
+  font-weight: 600;
+  text-decoration: underline;
+}
 html.lenis,
 html.lenis body {
   height: auto;

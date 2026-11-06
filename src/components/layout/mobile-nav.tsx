@@ -3,7 +3,8 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Brain, List, PiggyBank, ShieldCheck, Sparks, ViewGrid } from 'iconoir-react';
+import { List, PiggyBank, ShieldCheck, Sparks, ViewGrid } from 'iconoir-react';
+import { WalrusIcon } from '@/components/brand/integration-logo';
 import { useAppSession } from '@/components/auth/app-session-guard';
 import { cn } from '@/lib/utils';
 
@@ -15,7 +16,7 @@ export function MobileNav() {
     { name: 'Ledger', href: '/transactions', icon: List },
     { name: mode === 'business' ? 'Limit' : 'Budgets', href: '/budgets', icon: PiggyBank },
     { name: 'Assistant', href: '/assistant', icon: Sparks },
-    { name: 'Memory', href: '/memory', icon: Brain },
+    { name: 'Memory', href: '/memory', icon: WalrusIcon },
     { name: 'Proof', href: '/verification', icon: ShieldCheck },
   ];
 

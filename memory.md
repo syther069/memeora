@@ -1927,3 +1927,26 @@ Nothing committed.
 - Vercel deployment `dpl_Gj2rKYCH72dRdL4215xGrpDzgroy` READY, source git, aliased to memora-mu-kohl.vercel.app. Live `/`, `/dashboard`, `/sign-in` return 200, `/api/transactions` returns 401 without a session, and the landing HTML has the FAQ heading and no rupee sign.
 - Not tested live: wallet sign-in and signed-in pages.
 - Repo-local git identity is now syther069. The global git identity is unchanged.
+
+## 2026-11-06 — Memeora logo asset
+
+**Status:** Logo asset created; not committed or deployed. Finance and integration status unchanged.
+
+### Changes
+- Added `public/brand/memeora-logo.svg`, a horizontal royal-blue and cream wordmark using the existing Memeora ledger-M and memory-dot mark, exact brand colors, and Space Grotesk font declaration.
+- The asset is reusable; existing UI components were not changed.
+
+### Verification
+- No test or build commands run; this change is a standalone static SVG asset.
+
+### Next actions
+- Review the SVG logo and decide whether to adopt it in the app or export additional variants.
+
+## 2026-11-06 — Logo, wallet dialog and docs page
+
+**Status:** TESTED locally. Not committed or deployed.
+
+- Logo redrawn as a vector in `BrandMark`, `src/app/icon.svg` and `apple-icon.png`; `favicon.ico` removed. Memory nav icon is an outline W.
+- `/sign-in` removed; wallet login is now `components/auth/connect-wallet.tsx`, a dialog. Sign-out and 401 go to `/`. Sidebar logo links to `/`. A real wallet signature through the dialog is untested.
+- New `/docs` with `components/docs/docs-navigation.tsx`. Skiper 60 registry returned 401 (Pro), so this is an independent build from the user's spec, not a recreation. Active section is measured on scroll instead of using IntersectionObserver.
+- Checks: `npm run typecheck` exit 0; `npm run lint` exit 0; `npx vitest run` exit 0; `npm run build` exit 0. agent-browser 19 of 19 on the dev server at 1280 and 390, covering hash, deep link, keyboard, reduced motion and the pill bar.
