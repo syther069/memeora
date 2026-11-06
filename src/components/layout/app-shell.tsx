@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-import { usePathname } from 'next/navigation';
 import { useAppSession } from '@/components/auth/app-session-guard';
 import { GuestView } from '@/components/auth/guest-view';
 import { GuideDialog } from '@/components/guide/guide-dialog';
@@ -12,16 +11,13 @@ import { ModeSwitcher } from './mode-switcher';
 import { Sidebar } from './sidebar';
 import { SiteFooter } from './site-footer';
 
-/** App frame. During first-run setup there is no navigation: setup comes first. */
+/** App frame. */
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
   const { mode, isGuest } = useAppSession();
   const [isCommandOpen, setIsCommandOpen] = React.useState(false);
   const [isGuideOpen, setIsGuideOpen] = React.useState(false);
-  const isSetup = pathname === '/onboarding';
 
   React.useEffect(() => {
-    if (isSetup) return;
     const handleKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
@@ -30,15 +26,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isSetup]);
-
-  if (isSetup) {
-    return (
-      <div className="min-h-dvh text-[var(--ink-body)]">
-        <main id="main-content" className="w-full px-4 pb-[calc(2.5rem+var(--safe-bottom))] pt-[calc(2.5rem+var(--safe-top))] sm:px-6">{children}</main>
-      </div>
-    );
-  }
+  }, []);
 
   return (
     <div className="flex min-h-dvh text-[var(--ink-body)]">

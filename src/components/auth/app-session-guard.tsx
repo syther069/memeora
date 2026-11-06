@@ -2,7 +2,7 @@
 
 import { isCurrencyCode } from '@/modules/finance/domain/money';
 import * as React from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { Spinner } from '@/components/ui/spinner';
 import { isAppMode, type AppMode } from '@/lib/app-mode';
 import { setFinanceApiMode } from '@/lib/finance-api';
@@ -18,8 +18,6 @@ interface AppSession {
   /** The active workspace. Every finance request carries it. */
   mode: AppMode;
   setMode: (mode: AppMode) => void;
-  /** The onboarding page reports that setup is finished or deferred. */
-  markOnboardingSettled: (preferredCurrency?: CurrencyCode, mode?: AppMode) => void;
 }
 
 const AppSessionContext = React.createContext<AppSession>({
@@ -28,7 +26,6 @@ const AppSessionContext = React.createContext<AppSession>({
   preferredCurrency: 'USD',
   mode: 'personal',
   setMode: () => undefined,
-  markOnboardingSettled: () => undefined,
 });
 
 export function useAppSession() {
@@ -36,21 +33,18 @@ export function useAppSession() {
 }
 
 /**
- * Checks the wallet session and onboarding once when the signed-in area opens
+ * Checks the wallet session and profile once when the signed-in area opens
  * (each check costs several database round trips), then keeps the answer while
  * the user moves between pages. Pages that load data render only for a signed-in
  * wallet; a visitor without one sees the app frame and GuestView instead.
  */
 export function AppSessionGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [state, setState] = React.useState<SessionState>('checking');
-  const [onboardingRequired, setOnboardingRequired] = React.useState(false);
   const [walletAddress, setWalletAddress] = React.useState<string | null>(null);
   const [preferredCurrency, setPreferredCurrency] = React.useState<CurrencyCode>('USD');
   const [mode, setModeState] = React.useState<AppMode>('personal');
   const [retry, setRetry] = React.useState(0);
-  const firstPath = React.useRef(pathname);
 
   React.useEffect(() => {
     let active = true;
@@ -68,8 +62,6 @@ export function AppSessionGuard({ children }: { children: React.ReactNode }) {
         if (!active) return;
         if (!result.data.authenticated) {
           setState('unauthenticated');
-          // Setup needs an account; everything else can be looked at first.
-          if (firstPath.current === '/onboarding') router.replace('/');
           return;
         }
         const onboarding = await onboardingResponse.json();
@@ -82,7 +74,6 @@ export function AppSessionGuard({ children }: { children: React.ReactNode }) {
           setFinanceApiMode(savedMode);
           setModeState(savedMode);
         }
-        setOnboardingRequired(Boolean(onboarding.data.onboardingRequired));
         setState('authenticated');
       } catch {
         if (active) setState('error');
@@ -90,7 +81,7 @@ export function AppSessionGuard({ children }: { children: React.ReactNode }) {
     };
     void check();
     return () => { active = false; };
-  }, [retry, router]);
+  }, [retry]);
 
   // Only remembers the last choice; a failure changes nothing on screen.
   const rememberMode = React.useCallback((next: AppMode) => {
@@ -120,14 +111,6 @@ export function AppSessionGuard({ children }: { children: React.ReactNode }) {
     if (isAuthenticated && routeMode) rememberMode(routeMode);
   }, [isAuthenticated, routeMode, rememberMode]);
 
-  const mustOnboard = state === 'authenticated' && onboardingRequired && pathname !== '/onboarding';
-  const alreadyOnboarded = state === 'authenticated' && !onboardingRequired && pathname === '/onboarding';
-
-  React.useEffect(() => {
-    if (mustOnboard) router.replace('/onboarding');
-    else if (alreadyOnboarded) router.replace('/dashboard');
-  }, [mustOnboard, alreadyOnboarded, router]);
-
   const isGuest = state === 'unauthenticated';
   const session = React.useMemo<AppSession>(() => ({
     walletAddress,
@@ -135,17 +118,9 @@ export function AppSessionGuard({ children }: { children: React.ReactNode }) {
     preferredCurrency,
     mode,
     setMode: applyMode,
-    markOnboardingSettled: (currency, nextMode) => {
-      if (currency) setPreferredCurrency(currency);
-      if (nextMode) {
-        setFinanceApiMode(nextMode);
-        setModeState(nextMode);
-      }
-      setOnboardingRequired(false);
-    },
   }), [walletAddress, isGuest, preferredCurrency, mode, applyMode]);
 
-  if ((state === 'authenticated' && !mustOnboard && !alreadyOnboarded) || (isGuest && pathname !== '/onboarding')) {
+  if (state === 'authenticated' || isGuest) {
     return <AppSessionContext.Provider value={session}>{children}</AppSessionContext.Provider>;
   }
   if (state === 'error') return <main className="grid min-h-dvh place-items-center p-6"><div className="max-w-sm text-center"><h1 className="text-xl font-bold text-[var(--ink-primary)]">Could not check your session</h1><p className="mt-2 text-sm text-[var(--ink-secondary)]">Check your connection, then try again. Nothing you saved was lost.</p><button type="button" className="mt-4 h-10 rounded-full bg-[var(--brand-blue)] px-5 text-sm font-semibold text-[var(--ink-inverse)] hover:bg-[var(--brand-blue-hover)] cursor-pointer" onClick={() => setRetry((value) => value + 1)}>Check session again</button></div></main>;

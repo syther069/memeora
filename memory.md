@@ -1950,3 +1950,7 @@ Nothing committed.
 - `/sign-in` removed; wallet login is now `components/auth/connect-wallet.tsx`, a dialog. Sign-out and 401 go to `/`. Sidebar logo links to `/`. A real wallet signature through the dialog is untested.
 - New `/docs` with `components/docs/docs-navigation.tsx`. Skiper 60 registry returned 401 (Pro), so this is an independent build from the user's spec, not a recreation. Active section is measured on scroll instead of using IntersectionObserver.
 - Checks: `npm run typecheck` exit 0; `npm run lint` exit 0; `npx vitest run` exit 0; `npm run build` exit 0. agent-browser 19 of 19 on the dev server at 1280 and 390, covering hash, deep link, keyboard, reduced motion and the pill bar.
+
+## 2026-11-06 — Onboarding page removed
+
+- At the user's request. New wallets go straight to the overview with the profile made at sign-in: USD, Personal, memory off (column default FALSE). Consent is given and recorded with the toggle on the Memory page. `/api/onboarding` stays: the guard reads the profile from its GET.
