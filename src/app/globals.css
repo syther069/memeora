@@ -71,6 +71,8 @@
   --shadow-pill: 0 4px 14px -6px rgba(1, 75, 170, 0.35);
   --shadow-hero: 0 10px 28px -12px rgba(11, 35, 80, 0.22);
   --shadow-modal: 0 24px 56px -16px rgba(11, 35, 80, 0.32);
+  /* The landing page's cards: a hard edge, like a printed card on a desk. */
+  --shadow-card-hard: 5px 6px 0 var(--ink-primary);
 
   --radius-xs: 8px;
   --radius-sm: 12px;
@@ -80,6 +82,7 @@
   --radius-pill: 9999px;
 
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --duration-micro: 120ms;
   --duration-standard: 200ms;
   --duration-structural: 300ms;
@@ -219,6 +222,309 @@ body {
   select,
   textarea {
     font-size: 16px !important;
+  }
+}
+
+/*
+ * Landing page motion. The resting state is the finished page, and every hidden
+ * state lives inside no-preference, so reduced motion simply shows the page.
+ */
+.landing-card {
+  --tilt: 0deg;
+  rotate: var(--tilt);
+  outline: 1.5px solid var(--ink-primary);
+  box-shadow: var(--shadow-card-hard);
+}
+.lines .line {
+  display: block;
+  overflow: clip;
+  padding-bottom: 0.14em;
+  margin-bottom: -0.14em;
+}
+.lines [data-line] {
+  display: block;
+}
+.intro {
+  display: none;
+}
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+/* A plain column of screens, until CardStack pins it. */
+.stack-stage {
+  padding: 2.5rem 1rem 0;
+}
+.stack-frame {
+  display: grid;
+  gap: 1rem;
+  max-width: 68rem;
+  margin-inline: auto;
+}
+.stack-card {
+  display: flex;
+  flex-direction: column;
+}
+.stack-shot {
+  aspect-ratio: 16 / 10;
+}
+.stack-stage[data-pinned] {
+  height: 100svh;
+  padding: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.stack-stage[data-pinned] .stack-frame {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 92%;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+}
+.stack-stage[data-pinned] .stack-card {
+  position: absolute;
+  inset: 0;
+}
+.stack-stage[data-pinned] .stack-shot {
+  aspect-ratio: auto;
+  flex: 1;
+  min-height: 0;
+}
+.landing-wordmark {
+  overflow: clip;
+  white-space: nowrap;
+}
+.landing-wordmark span {
+  display: inline-block;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:has(.landing) {
+    scroll-behavior: smooth;
+  }
+
+  /* The first visit in a tab opens with the steps parting, and the hero follows them. */
+  html:not([data-intro-seen]) .landing {
+    --intro: 1000ms;
+  }
+  html:not([data-intro-seen]) .intro {
+    display: block;
+  }
+  .intro {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    pointer-events: none;
+    animation: intro-end 0s linear 1800ms forwards;
+  }
+  .intro-row {
+    position: absolute;
+    inset-inline: 0;
+    height: 50.5%;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+  }
+  .intro-top {
+    top: 0;
+  }
+  .intro-bottom {
+    bottom: 0;
+  }
+  .intro-row span {
+    margin-inline: -0.5px;
+    background: var(--brand-blue);
+    animation: intro-up 700ms var(--ease-expo) forwards;
+    animation-delay: calc(900ms + var(--s) * 55ms);
+  }
+  .intro-bottom span {
+    animation-name: intro-down;
+  }
+  .intro-word {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    justify-items: stretch;
+    gap: 0.75rem;
+    color: var(--ink-inverse);
+    animation: intro-word-out 240ms ease-in 800ms forwards;
+  }
+  .intro-letters {
+    overflow: clip;
+    padding-bottom: 0.08em;
+  }
+  .intro-letters span {
+    display: inline-block;
+    animation: landing-line 620ms var(--ease-expo) backwards;
+    animation-delay: calc(40ms + var(--i) * 34ms);
+  }
+  .intro-rule {
+    height: 2px;
+    background: currentColor;
+    transform-origin: 0 50%;
+    animation: intro-rule 520ms var(--ease-expo) 260ms backwards;
+  }
+
+  /* Load: settled about 1.2 seconds after the intro, and painted from the first frame. */
+  .lines [data-line] {
+    animation: landing-line 800ms var(--ease-expo) backwards;
+    animation-delay: calc(var(--intro, 0ms) + 80ms + var(--i) * 90ms);
+  }
+  .landing-load {
+    animation: landing-rise 500ms var(--ease-out) backwards;
+    animation-delay: calc(var(--intro, 0ms) + var(--d));
+  }
+  .landing-hero .landing-card {
+    animation: landing-settle 800ms var(--ease-expo) backwards;
+    animation-delay: calc(var(--intro, 0ms) + 240ms + var(--i) * 70ms);
+  }
+
+  /* Dashboard: pages settle once as they mount, and refreshes change no element, so nothing replays. */
+  #main-content > div > :where(section, div:not(.fixed, [role='dialog'])) {
+    animation: landing-rise 300ms var(--ease-out) backwards;
+  }
+  #main-content > div > :nth-child(2) {
+    animation-delay: 50ms;
+  }
+  #main-content > div > :nth-child(n + 3) {
+    animation-delay: 100ms;
+  }
+  .app-rise {
+    animation: landing-rise 260ms var(--ease-out) backwards;
+  }
+  .bar-grow {
+    transform-origin: 50% 100%;
+    animation: bar-grow 450ms var(--ease-expo) 100ms backwards;
+  }
+
+  .tip {
+    transform-origin: var(--radix-tooltip-content-transform-origin);
+    animation: tip-in 140ms var(--ease-out);
+  }
+
+  /* Cards straighten when pointed at, and hero cards shift by their own depth. */
+  .landing-card {
+    transition: rotate 320ms var(--ease-out);
+  }
+  .landing-float {
+    translate: calc(var(--px, 0) * var(--depth, 0px)) calc(var(--py, 0) * var(--depth, 0px));
+    transition: translate 500ms var(--ease-out);
+  }
+  @media (hover: hover) {
+    .landing-card:hover {
+      rotate: 0deg;
+    }
+    .landing a:hover > svg:last-child:not([data-link-arrow]) {
+      translate: 4px 0;
+    }
+    .landing li:hover .landing-pop {
+      scale: 1.08;
+    }
+  }
+  .landing a > svg:last-child:not([data-link-arrow]) {
+    transition: translate 300ms var(--ease-out);
+  }
+  .landing a.inline-flex:not(.hit) {
+    transition: background-color 180ms ease, color 180ms ease, scale 140ms var(--ease-out);
+  }
+  .landing a.inline-flex:not(.hit):active {
+    scale: 0.97;
+  }
+
+  /* Section entrances: the parts arrive in reading order, each in its own manner. */
+  .reveal [data-rise] {
+    transition: opacity 700ms var(--ease-out), translate 800ms var(--ease-expo);
+    transition-delay: calc(var(--i, 0) * 80ms);
+  }
+  .reveal-pending [data-rise] {
+    opacity: 0;
+    translate: 0 28px;
+  }
+  .reveal .landing-pop {
+    transition: opacity 500ms var(--ease-out), scale 700ms var(--ease-expo);
+    transition-delay: calc(var(--i, 0) * 80ms);
+  }
+  .reveal-pending .landing-pop {
+    opacity: 0;
+    scale: 0.6;
+  }
+  .reveal .landing-deal {
+    transition: opacity 500ms var(--ease-out), rotate 900ms var(--ease-expo), translate 900ms var(--ease-expo);
+    transition-delay: calc(var(--i, 0) * 70ms);
+  }
+  .reveal-pending .landing-deal {
+    opacity: 0;
+    rotate: 0deg;
+    translate: var(--from, 0) 20px;
+  }
+  .reveal .landing-wordmark span {
+    transition: translate 900ms var(--ease-expo);
+    transition-delay: calc(120ms + var(--i) * 35ms);
+  }
+  .reveal-pending .landing-wordmark span {
+    translate: 0 105%;
+  }
+}
+
+@keyframes intro-end {
+  to {
+    visibility: hidden;
+  }
+}
+@keyframes intro-up {
+  to {
+    transform: translateY(-101%);
+  }
+}
+@keyframes intro-down {
+  to {
+    transform: translateY(101%);
+  }
+}
+@keyframes intro-word-out {
+  to {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+@keyframes intro-rule {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes bar-grow {
+  from {
+    transform: scaleY(0);
+  }
+}
+@keyframes tip-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+@keyframes landing-line {
+  from {
+    transform: translateY(105%);
+  }
+}
+@keyframes landing-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+@keyframes landing-settle {
+  from {
+    opacity: 0;
+    rotate: 0deg;
+    transform: translateY(24px) scale(0.96);
   }
 }
 

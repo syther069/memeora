@@ -31,7 +31,7 @@ export class Budget {
     this.id = props.id;
     this.userId = props.userId;
     this.period = props.period;
-    this.amount = Money.fromMinorUnits(props.amountMinor, props.currency || 'INR');
+    this.amount = Money.fromMinorUnits(props.amountMinor, props.currency || 'USD');
     this.createdAt = props.createdAt || new Date();
     this.updatedAt = props.updatedAt || new Date();
   }

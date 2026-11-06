@@ -16,30 +16,30 @@ describe('Assistant Prompt Policy & Grounding Directives', () => {
       id: 'mem_emergency_01',
       userId: 'usr_1',
       category: 'goal',
-      text: 'Prioritize saving ₹3,000 each month for liquid emergency reserves',
+      text: 'Prioritize saving $3,000 each month for liquid emergency reserves',
     });
 
     const promptText = buildAssistantUserPrompt({
       userId: 'usr_1',
-      prompt: 'Can I afford a ₹5,000 laptop repair this month?',
+      prompt: 'Can I afford a $5,000 laptop repair this month?',
       cycleMonth: '2026-11',
       calculationContext: {
         remainingBudgetMinor: 660000,
         proposedPurchaseMinor: 500000,
-        remainingBudgetFormatted: '₹6,600.00',
-        proposedPurchaseFormatted: '₹5,000.00',
+        remainingBudgetFormatted: '$6,600.00',
+        proposedPurchaseFormatted: '$5,000.00',
         memoryStatus: 'used',
-        verdict: 'Breaches ₹3,000.00 emergency reserve memory rule (leaves ₹1,600.00)',
+        verdict: 'Breaches $3,000.00 emergency reserve memory rule (leaves $1,600.00)',
       },
       recalledMemories: [memory],
       memoryStatus: 'used',
     });
 
-    expect(promptText).toContain('Can I afford a ₹5,000 laptop repair this month?');
-    expect(promptText).toContain('₹6,600.00');
-    expect(promptText).toContain('₹5,000.00');
-    expect(promptText).toContain('Breaches ₹3,000.00 emergency reserve');
-    expect(promptText).toContain('Prioritize saving ₹3,000 each month for liquid emergency reserves');
+    expect(promptText).toContain('Can I afford a $5,000 laptop repair this month?');
+    expect(promptText).toContain('$6,600.00');
+    expect(promptText).toContain('$5,000.00');
+    expect(promptText).toContain('Breaches $3,000.00 emergency reserve');
+    expect(promptText).toContain('Prioritize saving $3,000 each month for liquid emergency reserves');
     expect(promptText).toContain('"category":"goal"');
   });
 
@@ -48,7 +48,7 @@ describe('Assistant Prompt Policy & Grounding Directives', () => {
       userId: 'usr_new',
       prompt: 'How much can I spend on groceries?',
       calculationContext: {
-        remainingBudgetFormatted: '₹12,000.00',
+        remainingBudgetFormatted: '$12,000.00',
         verdict: 'Safe within monthly limit',
       },
       recalledMemories: [],
@@ -65,20 +65,20 @@ describe('FallbackAssistantClient', () => {
       id: 'mem_dine',
       userId: 'usr_1',
       category: 'preference',
-      text: 'Keep dining out under ₹3,500 per month',
+      text: 'Keep dining out under $3,500 per month',
     });
 
     const result = await client.generateResponse({
       userId: 'usr_1',
       prompt: 'Can I go out for dinner tonight?',
       calculationContext: {
-        remainingBudgetFormatted: '₹2,500.00',
-        budgetLimitFormatted: '₹10,000.00',
-        currency: 'INR',
-        incomeFormatted: '₹5,000.00',
-        spendingFormatted: '₹2,500.00',
-        netCashFlowFormatted: '₹2,500.00',
-        proposedPurchaseFormatted: '₹1,200.00',
+        remainingBudgetFormatted: '$2,500.00',
+        budgetLimitFormatted: '$10,000.00',
+        currency: 'USD',
+        incomeFormatted: '$5,000.00',
+        spendingFormatted: '$2,500.00',
+        netCashFlowFormatted: '$2,500.00',
+        proposedPurchaseFormatted: '$1,200.00',
         memoryStatus: 'used',
         verdict: 'Fits within remaining dining cap',
       },
@@ -88,8 +88,8 @@ describe('FallbackAssistantClient', () => {
 
     expect(result.isFallback).toBe(true);
     expect(result.isFallback).toBe(true);
-    expect(result.message).toContain('₹2,500.00');
-    expect(result.message).toContain('Keep dining out under ₹3,500 per month');
+    expect(result.message).toContain('$2,500.00');
+    expect(result.message).toContain('Keep dining out under $3,500 per month');
     expect(result.recalledMemories).toHaveLength(1);
     expect(result.recalledMemories[0].category).toBe('preference');
   });
@@ -99,8 +99,8 @@ describe('GroqAssistantClient', () => {
   const input = {
     userId: 'usr_1',
     prompt: 'Can I buy shoes?',
-    calculationContext: { remainingBudgetFormatted: '₹4,000.00', verdict: 'Within budget', memoryStatus: 'used' as const },
-    recalledMemories: [MemoryRecord.create({ id: 'm1', userId: 'usr_1', category: 'preference', text: 'Keep a ₹3,000 buffer', status: 'confirmed' })],
+    calculationContext: { remainingBudgetFormatted: '$4,000.00', verdict: 'Within budget', memoryStatus: 'used' as const },
+    recalledMemories: [MemoryRecord.create({ id: 'm1', userId: 'usr_1', category: 'preference', text: 'Keep a $3,000 buffer', status: 'confirmed' })],
   };
   const answer = (content: unknown, status = 200) =>
     new Response(JSON.stringify({ choices: [{ message: { content } }] }), { status });
@@ -116,7 +116,7 @@ describe('GroqAssistantClient', () => {
     expect(body.model).toBe('test-model');
     expect(body.messages[0]).toEqual({ role: 'system', content: ASSISTANT_SYSTEM_PROMPT });
     expect(body.messages[1].content).toContain('Within budget');
-    expect(body.messages[1].content).toContain('Keep a ₹3,000 buffer');
+    expect(body.messages[1].content).toContain('Keep a $3,000 buffer');
     expect(result).toMatchObject({ message: 'You can, and your buffer stays intact.', isFallback: false, memoryStatus: 'used' });
     expect(result.calculationContext.verdict).toBe('Within budget');
   });

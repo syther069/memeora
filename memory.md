@@ -1776,3 +1776,144 @@ Nothing committed.
 - **State:** the user connected `syther069/memora` to the Vercel project `memora`; Vercel's project search by repo URL returns it. This commit is the test of whether a push deploys by itself.
 - **Open security item:** when checked, `DATABASE_MIGRATION_URL` (owner login) was on Vercel for production and preview, and imported keys were readable rather than Secret. The user has been told to remove it, re-add the keys as Secret and limit them to Production. Not confirmed done.
 - **Integration status:** Walrus, Tatum and the Assistant have not been tested on the live site with a signed-in wallet.
+
+### 2026-11-06 — Vercel Secured, Repo Public, User Reports Live Test Passed
+
+- **Verified by Claude:** `DATABASE_MIGRATION_URL` removed from Vercel; five keys are Secret and all variables Production only (`vercel env ls`); redeployed; `/sign-in` 200, challenge API 201, signed-out transactions 401; repo public (GitHub API). Git history scan clean for 7 secret values.
+- **Reported by the user, not independently verified:** wallet sign-in, Walrus setup, memory save, Assistant and proof all work on the live site.
+- **Open question:** a read-only count of `financial_memories` showed 4 confirmed rows with blobs plus 1 superseded, latest 2026-11-05 17:11 UTC, which is earlier than the live test. Check which database the live site uses and whether a memory was saved.
+
+- **Open question resolved (2026-11-06):** after the user saved a memory, the count rose from 4 to 5 confirmed rows with blobs; the new row is Business, created 04:58:36 UTC. The database records the save and a blob ID. Live versus local cannot be told apart from the row, as both use this database, and the blob was not separately read through Tatum.
+
+## 2026-11-06 — Landing page, Walrus and Sui marks
+
+**Status:** TESTED locally. Not committed or deployed. Integration status unchanged; no Walrus writes.
+
+### Goal
+- Build the landing page from the user's master prompt, with Walrus and Sui logos.
+
+### Changes
+- New: `src/components/landing/afford-demo.tsx`, `reveal.tsx`, `src/components/brand/integration-logo.tsx`, `public/brand/walrus.png`, `sui.png` (user supplied). Rewritten: `src/app/page.tsx`. Edited: `globals.css`, `site-footer.tsx`, `sign-in/page.tsx`, `guide-dialog.tsx`.
+
+### Reading and skills
+- Read in full: rules.md, design.md, UI and UX guides (minus source lists), four PDFs (text extracted with pypdf), design-taste-frontend SKILL.md. Not read in full: memory.md (summary and recent entries), prd.md, architecture.md, the taste skill's reference files.
+- Skills run: frontend-design, anti-ui-slop, ui-ux-pro-max, pick-ui-library exit 0. redesign-existing-projects exit 1 (not in that repo); the user approved design-taste-frontend instead. ui-ux-pro-max search scripts and anti-ui-slop's image target and separate-context critique were not run. No component registry code was used.
+
+### Verification
+- `npm run typecheck` exit 0; `npm run lint` exit 0; `npx vitest run` exit 0; `npm run build` exit 0 (dev server stopped).
+- agent-browser on localhost: 14 of 14 at 1440, 768, 390 (no sideways scroll, images, slider verdicts, dashboard link, reduced motion).
+- taste `lint.mjs` 0 FAIL 0 WARN. `inspect.mjs` 5 FAIL 5 WARN, kept on purpose: tilted cards' hard shadow and page cream (user brief), caption false positive, row dividers, off-centre reading from the tilted hero cards, 3-line headline at 390 px.
+
+### Decisions
+- Wallet and Sign out stay one button, per the user's direct instruction, although the pasted prompt says separate.
+- Reference cartoons and the Walrus Testnet art not used.
+
+### Blockers and risks
+- Slush flag on the live address unchanged. Licence to use the Walrus and Sui marks not checked.
+
+### Next actions
+- User reviews localhost; commit and deploy on approval; blog post.
+
+## 2026-11-06 — Landing page motion
+
+**Status:** TESTED locally. Not committed or deployed. Integration status unchanged.
+
+### Goal
+- Add animation to the landing page at the user's request.
+
+### Changes
+- New `src/components/landing/motion.tsx`. Edited `src/app/page.tsx`, `reveal.tsx`, `afford-demo.tsx`, `globals.css` (`--ease-expo`, motion block). No new dependencies; uses installed framer-motion and CSS.
+- Masked headline and card settle on load; pointer depth and scroll drift on hero cards; hero recedes; Transactions screen grows on scroll; rows, cards and wordmark letters have their own entrances; slider amount rolls with a budget meter and verdict swap. No idle loops, per the taste skill's motion rules.
+
+### Verification
+- `npm run typecheck` exit 0; `npm run lint` exit 0; `npx vitest run` exit 0; `npm run build` exit 0 (dev server stopped).
+- agent-browser, computed-state checks at 1440 and 390, including reduced motion: 22 of 22, run before a final 2-unit wordmark size change. Taste `inspect.mjs`: 5 FAIL, 4 WARN, same kept items plus the same caption false positive; `still-page` warning cleared.
+- Actual smoothness not judged: tests read state and still frames. Not tested on real phones, low-end hardware, Safari or Firefox.
+
+### Next actions
+- User reviews motion on localhost; commit and deploy on approval.
+
+## 2026-11-06 — Skiper UI motion on the landing page and shared controls
+
+**Status:** TESTED locally. Not committed or deployed. Integration status unchanged; no finance, memory, proof or API code changed.
+
+### Goal
+- Implement the Skiper components and previews the user listed.
+
+### Source status
+- Free source from the official registry, adapted: Skiper 30 (`parallax-gallery.tsx`), 17 (`card-stack.tsx`), 40 (`ui/animated-link.tsx`), 101 (`ui/tooltip.tsx`), 106 (caret in `ui/input.tsx`). Attribution is in the landing and app footers and in each file, as their licence requires.
+- Registry returns 401 (Pro) for 10, 23, 24, 29, 44, 103. No source used. Original Memeora work from their previews: `preloader.tsx` (10), `expand-cards.tsx` (23), `where-list.tsx` (24), `frame-zoom.tsx` plus stacked headline (29), `remembers-list.tsx` (44), `ui/expand.tsx` (103). Exact versions would need the user to paste the source.
+
+### Changes
+- New dependencies: `lenis` (landing only, `smooth-scroll.tsx`), `gsap`, `@gsap/react`, `@radix-ui/react-tooltip`. `dialkit` deliberately not added.
+- Landing order: intro, hero, ask, remembers, card stack, frame zoom, where, workspaces, gallery, questions, footer. `layout.tsx` gets `suppressHydrationWarning` on `html` for the intro's seen attribute.
+- App: `Expand` replaces both native details elements; tooltips on five icon buttons; smooth caret on all text-type `Input`s, with number and date fields left native.
+- Footer credit later removed at the user's request; attribution stays in the adapted source files.
+- Changed from source: 106 lost its dev panel and its import-time `navigator` read, which breaks server rendering; 40 fill links use brand colour, as mix-blend-difference went orange on blue; 17 cleans up only its own trigger.
+
+### Verification
+- `npm run typecheck` exit 0; `npm run lint` exit 0; `npx vitest run` exit 0 (187 of 187); `npm run build` exit 0 (dev server stopped).
+- agent-browser against the production build at 1440 and 390 and with reduced motion: 27 of 27 passed, plus where-section colour change confirmed on all 3 rows.
+- agent-browser against a temporary local page, since deleted: caret position matches measured text, moves on Home and arrows, hides on selection, native caret returns on blur and under reduced motion, number field untouched, tooltip and Expand open.
+- Fixed on the way: reduced-motion rows stayed dim because React does not patch inline styles on hydration; intro ended at progress 0.9999 with a 1 ms animation.
+- Not tested: these controls inside signed-in pages with real data, as that needs the wallet; real phones, Safari, Firefox. Smoothness not judged by a person. Taste `inspect.mjs` not rerun.
+- Console: `Error fetching metadata` comes from the Slush wallet SDK when its fetch to `api.slush.app` fails, not from this work.
+
+### Blockers and risks
+- Skiper 106 docs say it is not meant for accessibility-critical use; the native caret fallbacks above are the mitigation.
+- A preloader goes against the taste skill default. The user asked for it; it runs once per tab and in about 1.6 seconds.
+
+### Next actions
+- User reviews on localhost; commit and deploy on approval. User may paste Pro source for exact versions.
+
+### Follow-up: expandable cards no longer scroll
+- User reported the open workspace cards scrolled. Panel now clips, and `FitCrop` in `src/app/page.tsx` scales each screenshot to the height left under its text.
+- agent-browser at 1440, 1024, 390 and 320, all 4 cards: scroll overflow 0, text and screenshot inside the padding. `npm run typecheck` exit 0; `npm run lint` exit 0. Vitest and build not rerun; no logic changed.
+
+## 2026-11-06 — Landing motion carried into the dashboard
+
+**Status:** Partly TESTED locally; signed-in pages not seen running, as they need the user's wallet. Not committed or deployed. Integration status unchanged; no API, finance or memory logic changed. No new dependencies.
+
+### Changes
+- New `ui/rolling-amount.tsx` (moved from the slider demo; screen readers get the exact figure) and `ui/motion-row.tsx`.
+- Overview: hero figures roll, month bars grow once, hero Expand states the sum. Transactions: rows animate on add and remove, hover highlight, sliding type pill. Memory rows animate. Assistant: messages rise; income, spending and record window move into Expand. Animated links replace `hover:underline` links. Tooltips on modal Close and toast Dismiss. Page blocks settle once on mount.
+
+### Decisions
+- Workspace crossfade already existed through `React.ViewTransition` in `app-shell.tsx`; no code added.
+- Kept visible, not collapsed, because they are trust information: proof scope notes, memories an answer used, the budget total note.
+- Skiper 23 shared-layout cards replaced with a plain Expand on totals, to avoid new layout in the money view. Skiper 24 is a row highlight only.
+
+### Verification
+- `npm run typecheck` exit 0; `npm run lint` exit 0; `npx vitest run` exit 0 (187 of 187); `npm run build` exit 0 (dev server stopped).
+- agent-browser: amount rolled through 95 distinct frames and ended exact, and is exact at once under reduced motion; row add and remove on a temporary page, since deleted; guest dashboard opens with no sideways scroll, entrance animation running. The stagger fix after that check was not re-observed.
+- Not tested: signed-in overview, Transactions, Assistant, Memory and proof pages with real data; real phones; long lists.
+
+### Next actions
+- User tests signed in; commit and deploy on approval.
+
+## 2026-11-06 — INR removed; USD default; USDC, USDT, SUI, WAL and Other added
+
+**Status:** TESTED locally. Migration `0010` VERIFIED applied on Neon. Code not committed or deployed.
+
+### Changes
+- `domain/money.ts`: new `CurrencyCode`, `CURRENCY_LABELS` and one formatter, `formatMinorUnits`, since Intl rejects codes like USDC. `ui/currency-options.tsx` feeds every select. All defaults are USD. Landing, examples and suggested prompts rewritten in dollars.
+- Migration `0010_usd_and_crypto_currencies.sql`: widens currency columns to `VARCHAR(8)`, default USD, deletes INR rows, moves INR profiles to USD.
+- Assistant: a price in rupees or any currency other than the ledger's still returns the no-conversion answer, so it is never read as ledger money. The only INR left in `src/` is this detection. Token suffixes such as "50 SUI" are now understood.
+- `tatum-rates.ts`: a token priced in itself is 1; no rate lookup for Other.
+
+### Live data
+- User chose deletion: 2 INR transactions permanently deleted from Neon; 1 USD transaction kept; 2 profiles moved to USD.
+- User chose recapture: all 7 `public/guide` images retaken in USD with a throwaway wallet, then its user row deleted; counts afterwards 0 for transactions, budgets, goals, memories and identity. No Walrus writes. Sample memories are table rows only, as before, and the guide caption says so.
+- Not changed: 3 of 6 saved memories mention rupees. They are the users' own words and Walrus copies cannot be edited. Older docs and `scripts/seed-mainnet-memories.ts` also still mention rupees, and `docs/mainnet-memory-evidence.json` records past writes.
+
+### Verification
+- `npm run typecheck` exit 0; `npm run lint` exit 0; `npx vitest run` exit 0 (189 of 189, 2 new); `npm run build` exit 0 (dev server stopped).
+- Live browser capture as the throwaway wallet: no rupee text on overview, business, transactions, budgets, memory, proof or assistant pages.
+- Not tested in a browser: choosing each new currency in a form. API tests store USDC through the real routes and migrations.
+
+### Limits
+- Every currency keeps two decimals in the ledger, so a token value under 0.01 cannot be entered. Exact on-chain amounts are stored separately.
+- Other is one bucket: different currencies entered as Other are totalled together. Memeora does not convert, so totals stay per currency.
+
+### Next actions
+- Deploy: live code still allows INR until this is deployed, though the migration is already applied.

@@ -99,15 +99,15 @@ describe('mergeRecall', () => {
 
 describe('unknownRecalled', () => {
   it('does not treat a just-finished write of the user as a new memory', () => {
-    const local = [record('w', 'pending', { job: 'job-w', text: 'Keep a ₹3,000 buffer' })];
-    expect(unknownRecalled(local, [hit('blob-w', 'Keep a ₹3,000 buffer')])).toEqual([]);
+    const local = [record('w', 'pending', { job: 'job-w', text: 'Keep a $3,000 buffer' })];
+    expect(unknownRecalled(local, [hit('blob-w', 'Keep a $3,000 buffer')])).toEqual([]);
     expect(unknownRecalled(local, [hit('blob-x', 'Another rule entirely')]).map((m) => m.blobId)).toEqual(['blob-x']);
   });
 
   it('does not bring back a memory the user removed while its write was pending', () => {
-    const removed = [record('gone', 'superseded', { job: 'job-gone', text: 'Keep a ₹3,000 buffer' })];
-    expect(unknownRecalled(removed, [hit('blob-gone', 'Keep a ₹3,000 buffer')])).toEqual([]);
-    expect(mergeRecall(removed, { available: true, memories: [hit('blob-gone', 'Keep a ₹3,000 buffer')] }))
+    const removed = [record('gone', 'superseded', { job: 'job-gone', text: 'Keep a $3,000 buffer' })];
+    expect(unknownRecalled(removed, [hit('blob-gone', 'Keep a $3,000 buffer')])).toEqual([]);
+    expect(mergeRecall(removed, { available: true, memories: [hit('blob-gone', 'Keep a $3,000 buffer')] }))
       .toMatchObject({ memories: [], unknown: [] });
   });
 });

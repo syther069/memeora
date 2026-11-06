@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (input.action !== 'complete' || !isCurrencyCode(input.currency) || typeof input.memoryConsentEnabled !== 'boolean') {
-    return jsonError('VALIDATION_ERROR', 'Choose INR or USD and explicitly accept or decline memory storage.', 400);
+    return jsonError('VALIDATION_ERROR', 'Choose a supported currency and explicitly accept or decline memory storage.', 400);
   }
   const monthlyBudgetMinor = input.monthlyBudgetMinor;
   if (monthlyBudgetMinor !== undefined && monthlyBudgetMinor !== null && !isPositiveMinor(monthlyBudgetMinor)) {

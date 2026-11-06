@@ -1,12 +1,15 @@
 'use client';
 
+import type { CurrencyCode } from '@/modules/finance/domain/money';
 import * as React from 'react';
+import { Expand } from '@/components/ui/expand';
+import { AnimatedLink } from '@/components/ui/animated-link';
 import { Card } from '@/components/ui/card';
+import { Tooltip } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import { useToast } from '@/components/ui/toast';
-import Link from 'next/link';
 import { useAppSession } from '@/components/auth/app-session-guard';
 import { formatPeriod } from '@/lib/dates';
 import { currentPeriod, financeApi } from '@/lib/finance-api';
@@ -19,7 +22,7 @@ interface ChatMessage {
   calculationContext?: {
     remainingBudgetFormatted: string;
     proposedPurchaseFormatted?: string;
-    currency?: 'INR' | 'USD';
+    currency?: CurrencyCode;
     recordWindowDescription?: string;
     incomeFormatted?: string;
     spendingFormatted?: string;
@@ -38,16 +41,15 @@ const greeting = 'Ask me about your spending, budget or goals. I work out the su
 
 export default function AssistantPage() {
   const { toast } = useToast();
-  const { preferredCurrency, mode } = useAppSession();
-  const symbol = preferredCurrency === 'USD' ? '$' : '₹';
+  const { mode } = useAppSession();
   const activePeriodLabel = formatPeriod(currentPeriod());
   const suggestedPrompts = mode === 'business' ? [
-    `Can we afford a ${symbol}45,000 contractor this month?`,
+    'Can we afford a $4,500 contractor this month?',
     'What is our burn and runway?',
     'What are our biggest costs this month?',
     'How are our business goals doing?',
   ] : [
-    `Can I afford a ${symbol}4,500 purchase this month?`,
+    'Can I afford a $450 purchase this month?',
     'How much did I spend on dining this month?',
     'How are my savings goals doing?',
     'How much is left over this month?',
@@ -173,16 +175,17 @@ export default function AssistantPage() {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/memory" className="font-bold text-[var(--brand-blue)] hover:underline">Your memories</Link>
-          <button
-            type="button"
-            onClick={handleResetChat}
-            title="Start a new conversation"
-            aria-label="Start a new conversation"
-            className="p-1 text-[var(--ink-muted)] hover:text-[var(--ink-primary)] rounded-full hover:bg-[var(--surface-hover)] cursor-pointer"
-          >
-            <Refresh className="w-3.5 h-3.5" />
-          </button>
+          <AnimatedLink href="/memory" className="font-bold text-[var(--brand-blue)]">Your memories</AnimatedLink>
+          <Tooltip label="Start a new conversation">
+            <button
+              type="button"
+              onClick={handleResetChat}
+              aria-label="Start a new conversation"
+              className="p-1 text-[var(--ink-muted)] hover:text-[var(--ink-primary)] rounded-full hover:bg-[var(--surface-hover)] cursor-pointer"
+            >
+              <Refresh className="w-3.5 h-3.5" />
+            </button>
+          </Tooltip>
         </div>
       </div>
 
@@ -204,7 +207,7 @@ export default function AssistantPage() {
           return (
             <div
               key={msg.id}
-              className={`flex items-start gap-3.5 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
+              className={`app-rise flex items-start gap-3.5 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
             >
               <div
                 className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
@@ -224,14 +227,16 @@ export default function AssistantPage() {
                 }`}
               >
                 {!isUser && (
-                  <button
-                    type="button"
-                    onClick={() => handleCopyMessage(msg.content)}
-                    aria-label="Copy assistant answer"
-                    className="absolute top-2.5 right-2.5 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 focus-visible:opacity-100 p-1.5 rounded-lg text-[var(--ink-muted)] hover:text-[var(--ink-primary)] hover:bg-[var(--surface-tint)] transition-[opacity,color,background-color] cursor-pointer"
-                  >
-                    <Copy className="w-3.5 h-3.5" />
-                  </button>
+                  <Tooltip label="Copy answer">
+                    <button
+                      type="button"
+                      onClick={() => handleCopyMessage(msg.content)}
+                      aria-label="Copy assistant answer"
+                      className="absolute top-2.5 right-2.5 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 focus-visible:opacity-100 p-1.5 rounded-lg text-[var(--ink-muted)] hover:text-[var(--ink-primary)] hover:bg-[var(--surface-tint)] transition-[opacity,color,background-color] cursor-pointer"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                  </Tooltip>
                 )}
 
                 <p className="whitespace-pre-line pr-4">{msg.content}</p>
@@ -250,8 +255,10 @@ export default function AssistantPage() {
                         <span>Proposed: {msg.calculationContext.proposedPurchaseFormatted}</span>
                       )}
                     </div>
+                    {(msg.calculationContext.incomeFormatted || msg.calculationContext.spendingFormatted || msg.calculationContext.netCashFlowFormatted || msg.calculationContext.recordWindowDescription) && <Expand label="How this was worked out" summaryClassName="text-[11px]"><div className="space-y-1 pt-1.5">
                     {(msg.calculationContext.incomeFormatted || msg.calculationContext.spendingFormatted || msg.calculationContext.netCashFlowFormatted) && <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] font-semibold text-[var(--ink-muted)]"><span>Income: {msg.calculationContext.incomeFormatted}</span><span>Expenses: {msg.calculationContext.spendingFormatted}</span><span>Net: {msg.calculationContext.netCashFlowFormatted}</span></div>}
                     {msg.calculationContext.recordWindowDescription && <p className="text-[11px] text-[var(--ink-muted)]">{msg.calculationContext.recordWindowDescription}</p>}
+                    </div></Expand>}
                     {msg.memoryStatus && <p className="text-[11px] font-medium text-[var(--ink-secondary)]">Memory: {msg.memoryStatus === 'used' ? (msg.memorySource === 'walrus' ? 'recalled from your Walrus memories' : 'from Memeora\'s saved list, because Walrus did not answer this time') : msg.memoryStatus === 'none_found' ? 'no memory matched this question' : msg.memoryStatus === 'not_consented' ? 'off. Turn it on in the Memory page' : 'could not be loaded for this answer'}{msg.isFallback ? ' · Answered without the AI model; the sums are unaffected' : ''}</p>}
 
                     {/* Cited Walrus Memories Pills */}

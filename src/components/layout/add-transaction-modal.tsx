@@ -1,5 +1,7 @@
 'use client';
 
+import { CurrencyOptions } from '@/components/ui/currency-options';
+import type { CurrencyCode } from '@/modules/finance/domain/money';
 import * as React from 'react';
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
@@ -15,7 +17,7 @@ import { parseMajorUnitsToMinor } from '@/modules/finance/domain/money';
 export interface SavedTransaction {
   type: 'expense' | 'income';
   amountMinor: number;
-  currency: 'INR' | 'USD';
+  currency: CurrencyCode;
   category: string;
 }
 
@@ -33,7 +35,7 @@ export function AddTransactionModal({ transaction, onClose, onSaved }: AddTransa
   // On an entry verified on Sui, direction and date are what the chain says.
   const chainFactsLocked = onChain?.verified === true;
   const [type, setType] = React.useState<'expense' | 'income'>(transaction?.type ?? 'expense');
-  const [currency, setCurrency] = React.useState<'INR' | 'USD'>(transaction?.currency ?? preferredCurrency);
+  const [currency, setCurrency] = React.useState<CurrencyCode>(transaction?.currency ?? preferredCurrency);
   const [amount, setAmount] = React.useState(transaction ? (transaction.amountMinor / 100).toFixed(2) : '');
   const [category, setCategory] = React.useState(transaction?.category ?? categoriesFor(mode, 'expense')[0]);
   const [description, setDescription] = React.useState(transaction?.description ?? '');
@@ -143,9 +145,8 @@ export function AddTransactionModal({ transaction, onClose, onSaved }: AddTransa
           />
           <div className="space-y-1.5 text-left">
             <label htmlFor="transaction-currency" className="block text-xs font-bold text-[var(--ink-primary)]">Currency</label>
-            <select id="transaction-currency" value={currency} onChange={(e) => setCurrency(e.target.value as 'INR' | 'USD')} className={selectClass}>
-              <option value="INR">INR ₹</option>
-              <option value="USD">USD $</option>
+            <select id="transaction-currency" value={currency} onChange={(e) => setCurrency(e.target.value as CurrencyCode)} className={selectClass}>
+              <CurrencyOptions />
             </select>
           </div>
         </div>

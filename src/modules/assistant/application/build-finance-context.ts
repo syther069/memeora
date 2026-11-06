@@ -18,20 +18,23 @@ interface BuildFinanceContextInput {
 
 function parseProposedPurchase(prompt: string, currency: CurrencyCode): { amountMinor?: number; currencyMismatch: boolean } {
   if (!/\b(can i afford|afford|purchase|buy)\b/i.test(prompt)) return { currencyMismatch: false };
-  const moneyMatch = /(?:₹|\b(?:rs\.?|inr)\b|\$|\busd\b)\s*((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{1,2})?)/i.exec(prompt);
-  const amountMatch = moneyMatch ?? /\b(?:for|cost(?:s|ing)?|of)\s+((?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d{1,2})?)\b/i.exec(prompt);
-  if (!amountMatch) return { currencyMismatch: false };
-  const marker = moneyMatch?.[0].slice(0, moneyMatch[0].indexOf(moneyMatch[1])).trim().toLowerCase();
-  const detectedCurrency: CurrencyCode | undefined = marker && (marker === '$' || marker.includes('usd')) ? 'USD' : marker ? 'INR' : undefined;
-  if (detectedCurrency && detectedCurrency !== currency) return { currencyMismatch: true };
-  return { amountMinor: parseMajorUnitsToMinor(amountMatch[1]) ?? undefined, currencyMismatch: false };
+  const amount = '((?:\\d{1,3}(?:,\\d{3})+|\\d+)(?:\\.\\d{1,2})?)';
+  const prefixed = new RegExp(`(₹|\\brs\\.?|\\binr\\b|\\$|\\busd[ct]?\\b|\\bsui\\b|\\bwal\\b)\\s*${amount}`, 'i').exec(prompt);
+  const suffixed = new RegExp(`${amount}\\s*(usd[ct]?|sui|wal|inr|rupees?|dollars?)\\b`, 'i').exec(prompt);
+  const amountText = prefixed?.[2] ?? suffixed?.[1] ?? new RegExp(`\\b(?:for|cost(?:s|ing)?|of)\\s+${amount}\\b`, 'i').exec(prompt)?.[1];
+  if (!amountText) return { currencyMismatch: false };
+  const marker = (prefixed?.[1] ?? suffixed?.[2])?.toLowerCase();
+  // A price in anything other than the ledger's currency, rupees included, must not be read as ledger money.
+  const detected = !marker ? undefined : marker === '$' || marker === 'usd' || marker.startsWith('dollar') ? 'USD' : marker.toUpperCase();
+  if (detected && detected !== currency) return { currencyMismatch: true };
+  return { amountMinor: parseMajorUnitsToMinor(amountText) ?? undefined, currencyMismatch: false };
 }
 
 export function buildFinanceContext(input: BuildFinanceContextInput): CalculationContext {
   const periodTransactions = input.transactions.filter(
     (transaction) => transaction.occurredAt.toISOString().slice(0, 7) === input.cycleMonth
   );
-  const currency = input.budget?.amount.currency ?? periodTransactions[0]?.amount.currency ?? 'INR';
+  const currency = input.budget?.amount.currency ?? periodTransactions[0]?.amount.currency ?? 'USD';
   const selectedTransactions = periodTransactions.filter((transaction) => transaction.amount.currency === currency);
   const records: TransactionRecord[] = selectedTransactions.map((transaction) => ({
     id: transaction.id,

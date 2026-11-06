@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { ArrowDownRight, ArrowUpRight } from 'iconoir-react';
+import { MotionRow } from '@/components/ui/motion-row';
 import { Badge } from '@/components/ui/badge';
 import { formatMoney, type ApiTransaction } from '@/lib/finance-api';
 import { formatLedgerDate } from '@/lib/dates';
@@ -9,7 +10,7 @@ export function TxRow({ tx, actions }: { tx: ApiTransaction; actions?: React.Rea
   const isExpense = tx.type === 'expense';
   const Icon = isExpense ? ArrowDownRight : ArrowUpRight;
   return (
-    <li className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-3">
+    <MotionRow><div className="-mx-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-[var(--radius-sm)] px-2 py-3 transition-colors hover:bg-[var(--surface-hover)]">
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${isExpense ? 'bg-[var(--surface-sunken)] text-[var(--ink-primary)]' : 'bg-[var(--accent-positive-bg)] text-[var(--accent-positive)]'}`}>
           <Icon aria-hidden className="h-4 w-4" />
@@ -34,6 +35,6 @@ export function TxRow({ tx, actions }: { tx: ApiTransaction; actions?: React.Rea
         </p>
       </div>
       {actions && <div className="flex w-full flex-wrap justify-end gap-1 lg:w-auto">{actions}</div>}
-    </li>
+    </div></MotionRow>
   );
 }

@@ -1,12 +1,18 @@
 'use client';
 
+import { CurrencyOptions } from '@/components/ui/currency-options';
+import type { CurrencyCode } from '@/modules/finance/domain/money';
 import * as React from 'react';
 import Link from 'next/link';
 import { ArrowRight, EditPencil, Page, Sparks, Plus } from 'iconoir-react';
+import { AnimatePresence } from 'framer-motion';
+import { Expand } from '@/components/ui/expand';
+import { RollingAmount } from '@/components/ui/rolling-amount';
 import { useLedger } from '@/components/layout/ledger-provider';
 import { CategoryBars, GuideStrip, MonthBars, RulesPanel, SectionHead, UsageGauge, type MemorySummary, type OverviewPayload } from '@/components/overview/overview-parts';
 import { TxRow } from '@/components/transactions/tx-row';
 import { Button } from '@/components/ui/button';
+import { Tooltip } from '@/components/ui/tooltip';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
@@ -20,7 +26,7 @@ import { useFinanceResource } from '@/lib/use-finance-resource';
 import { formatRunway, type BusinessMetrics } from '@/modules/finance/domain/business-metrics';
 import { parseMajorUnitsToMinor } from '@/modules/finance/domain/money';
 
-type Currency = 'INR' | 'USD';
+type Currency = CurrencyCode;
 
 interface Overview {
   period: string;
@@ -46,12 +52,12 @@ export default function BusinessOverviewPage() {
 
   const [isCashOpen, setIsCashOpen] = React.useState(false);
   const [cashInput, setCashInput] = React.useState('');
-  const [cashCurrency, setCashCurrency] = React.useState<Currency>('INR');
+  const [cashCurrency, setCashCurrency] = React.useState<Currency>('USD');
   const [cashError, setCashError] = React.useState<string | null>(null);
   const [isSavingCash, setIsSavingCash] = React.useState(false);
 
   const overview = figures.data;
-  const currency = overview?.currency ?? 'INR';
+  const currency = overview?.currency ?? 'USD';
   const metrics = overview?.metrics;
   const budget = budgets.data?.budget ?? null;
   const transactions = (ledger.data?.transactions ?? []).filter((tx) => !hiddenIds.has(tx.id));
@@ -129,7 +135,7 @@ export default function BusinessOverviewPage() {
           <div>
             <p className="text-xs font-medium text-[var(--ink-on-blue-muted)]">Profit in {periodLabel}</p>
             {metrics
-              ? <p className="mt-1 text-4xl font-bold tracking-tight tabular-nums sm:text-5xl">{metrics.profitMinor < 0 ? '−' : ''}{money(Math.abs(metrics.profitMinor))}</p>
+              ? <p className="mt-1 text-4xl font-bold tracking-tight tabular-nums sm:text-5xl">{metrics.profitMinor < 0 ? '−' : ''}<RollingAmount key={currency} minor={Math.abs(metrics.profitMinor)} format={money} /></p>
               : figuresFailed ? <p className="mt-2 text-2xl font-bold">Unavailable</p> : <Skeleton className="mt-2 h-12 w-48 bg-white/20" />}
             <p className="mt-1.5 text-xs text-[var(--ink-on-blue-muted)]">Revenue minus expenses you recorded. Not your accounting profit.</p>
           </div>
@@ -143,6 +149,7 @@ export default function BusinessOverviewPage() {
               <dd className="mt-0.5 text-lg font-semibold tabular-nums">{metrics ? money(metrics.expensesMinor) : '—'}</dd>
             </div>
           </dl>
+          {metrics && <Expand label="How this is worked out" className="on-blue -mt-3 text-xs" summaryClassName="text-[var(--ink-inverse)]!"><p className="pt-2 tabular-nums text-[var(--ink-on-blue-muted)]">revenue {money(metrics.revenueMinor)} minus expenses {money(metrics.expensesMinor)} is {`${metrics.profitMinor < 0 ? '−' : ''}${money(Math.abs(metrics.profitMinor))}`}.</p></Expand>}
         </Card>
 
         <Card className="lg:col-span-4">
@@ -163,7 +170,7 @@ export default function BusinessOverviewPage() {
               <div>
                 <dt className="flex items-center gap-1 text-xs text-[var(--ink-secondary)]">
                   Cash you hold
-                  <button type="button" onClick={openCash} aria-label="Edit cash figure" className="hit rounded-full p-0.5 text-[var(--ink-muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--ink-primary)] cursor-pointer"><EditPencil className="h-3 w-3" /></button>
+                  <Tooltip label="Edit cash figure"><button type="button" onClick={openCash} aria-label="Edit cash figure" className="hit rounded-full p-0.5 text-[var(--ink-muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--ink-primary)] cursor-pointer"><EditPencil className="h-3 w-3" /></button></Tooltip>
                 </dt>
                 <dd className="mt-0.5 text-sm font-semibold tabular-nums text-[var(--ink-primary)]">{overview?.cashMinor === null || !overview ? '—' : money(overview.cashMinor)}</dd>
               </div>
@@ -207,7 +214,7 @@ export default function BusinessOverviewPage() {
           {ledger.isLoading ? <ListSkeleton rows={3} label="Loading transactions" />
             : ledger.error && !ledger.data ? <p className="py-6 text-center text-xs text-[var(--ink-secondary)]">Transactions are unavailable right now. <button type="button" onClick={() => void ledger.refresh()} className="font-semibold text-[var(--brand-blue)] underline cursor-pointer">Try again</button></p>
               : !hasTransactions ? <EmptyState icon={<Page className="h-6 w-6" />} title="No business transactions yet" description="These stay separate from your personal ledger." actionLabel="Add a transaction" onAction={openAddTransaction} />
-              : <ul className="divide-y divide-[var(--border-subtle)]">{transactions.map((tx) => <TxRow key={tx.id} tx={tx} />)}</ul>}
+              : <ul className="divide-y divide-[var(--border-subtle)]"><AnimatePresence initial={false}>{transactions.map((tx) => <TxRow key={tx.id} tx={tx} />)}</AnimatePresence></ul>}
         </Card>
         <div className="flex flex-col gap-4 lg:col-span-5">
           <RulesPanel memory={memory.data} isLoading={memory.isLoading} business />
@@ -243,8 +250,7 @@ export default function BusinessOverviewPage() {
             <div className="space-y-1.5 text-left">
               <label htmlFor="cash-currency" className="block text-xs font-semibold text-[var(--ink-primary)]">Currency</label>
               <select id="cash-currency" value={cashCurrency} onChange={(event) => setCashCurrency(event.target.value as Currency)} className="h-11 w-full rounded-[var(--radius-sm)] border border-[var(--border-field)] bg-[var(--surface-elevated)] px-3 text-sm text-[var(--ink-primary)]">
-                <option value="INR">INR ₹</option>
-                <option value="USD">USD $</option>
+                <CurrencyOptions />
               </select>
             </div>
           </div>

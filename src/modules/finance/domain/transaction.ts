@@ -35,7 +35,7 @@ export class Transaction {
     this.id = props.id;
     this.userId = props.userId;
     this.type = props.type;
-    this.amount = Money.fromMinorUnits(props.amountMinor, props.currency || 'INR');
+    this.amount = Money.fromMinorUnits(props.amountMinor, props.currency || 'USD');
     this.category = props.category.trim();
     this.description = props.description?.trim() || '';
     this.occurredAt = props.occurredAt || new Date();

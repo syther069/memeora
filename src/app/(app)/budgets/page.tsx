@@ -1,5 +1,6 @@
 'use client';
 
+import type { CurrencyCode } from '@/modules/finance/domain/money';
 import * as React from 'react';
 import { Card } from '@/components/ui/card';
 import { useAppSession } from '@/components/auth/app-session-guard';
@@ -19,7 +20,7 @@ import { LoadErrorPanel } from '@/components/ui/status-panels';
 import { Calendar, EditPencil, Pause, PiggyBank, Play, Plus, Trash } from 'iconoir-react';
 
 type LoadState = 'loading' | 'ready' | 'offline' | 'error';
-interface BudgetPayload { period: string; preferredCurrency?: 'INR' | 'USD'; budget: ApiBudget | null; savingsGoals: ApiSavingsGoal[]; periodTotals: ApiPeriodTotals[] }
+interface BudgetPayload { period: string; preferredCurrency?: CurrencyCode; budget: ApiBudget | null; savingsGoals: ApiSavingsGoal[]; periodTotals: ApiPeriodTotals[] }
 
 export default function BudgetsPage() {
   const { mode } = useAppSession();
@@ -71,7 +72,7 @@ export default function BudgetsPage() {
 
   const budget = budgetData?.budget ?? null;
   const goals = budgetData?.savingsGoals ?? [];
-  const budgetCurrency = budget?.currency ?? budgetData?.preferredCurrency ?? goals[0]?.currency ?? 'INR';
+  const budgetCurrency = budget?.currency ?? budgetData?.preferredCurrency ?? goals[0]?.currency ?? 'USD';
   const periodTotals = budgetData?.periodTotals.find((entry) => entry.currency === budgetCurrency);
   const currentSpentMinor = periodTotals?.expenseMinor ?? 0;
   const remainingMinor = budget ? budget.amountMinor - currentSpentMinor : null;

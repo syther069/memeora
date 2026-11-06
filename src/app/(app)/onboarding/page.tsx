@@ -1,5 +1,7 @@
 'use client';
 
+import { CurrencyOptions } from '@/components/ui/currency-options';
+import type { CurrencyCode } from '@/modules/finance/domain/money';
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { Check, DollarCircle, ShieldCheck, Sparks, Suitcase, User } from 'iconoir-react';
@@ -28,7 +30,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const { markOnboardingSettled } = useAppSession();
   const [mode, setMode] = React.useState<AppMode>('personal');
-  const [currency, setCurrency] = React.useState<'INR' | 'USD'>('INR');
+  const [currency, setCurrency] = React.useState<CurrencyCode>('USD');
   const [budget, setBudget] = React.useState('');
   const [goalName, setGoalName] = React.useState('');
   const [goalAmount, setGoalAmount] = React.useState('');
@@ -116,8 +118,8 @@ export default function OnboardingPage() {
           <div className="grid gap-5 sm:grid-cols-2">
             <label className="space-y-1.5 text-left">
               <span className="block text-xs font-bold text-[var(--ink-primary)]">Preferred currency</span>
-              <select value={currency} onChange={(event) => setCurrency(event.target.value as 'INR' | 'USD')} className="h-11 w-full rounded-xl border border-[var(--border-field)] bg-[var(--surface-card)] px-4 text-sm font-medium text-[var(--ink-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-blue-bright)]">
-                <option value="INR">INR · Indian rupee</option><option value="USD">USD · US dollar</option>
+              <select value={currency} onChange={(event) => setCurrency(event.target.value as CurrencyCode)} className="h-11 w-full rounded-xl border border-[var(--border-field)] bg-[var(--surface-card)] px-4 text-sm font-medium text-[var(--ink-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-blue-bright)]">
+                <CurrencyOptions />
               </select>
             </label>
             <Input label={`Monthly budget (${currency}, optional)`} type="number" inputMode="decimal" min="0.01" step="0.01" placeholder="0.00" value={budget} onChange={(event) => setBudget(event.target.value)} helperText="A spending limit for the current month." />

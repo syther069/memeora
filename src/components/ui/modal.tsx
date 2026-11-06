@@ -1,5 +1,6 @@
 'use client';
 
+import { Tooltip } from './tooltip';
 import * as React from 'react';
 import { motion, useDragControls, useReducedMotion } from 'framer-motion';
 import { Xmark } from 'iconoir-react';
@@ -106,9 +107,9 @@ export function Modal({ isOpen, onClose, title, description, children, className
             {title && <h2 id={titleId} className="text-lg font-bold tracking-tight text-[var(--ink-primary)]">{title}</h2>}
             {description && <p className="text-xs text-[var(--ink-secondary)] mt-1 leading-relaxed">{description}</p>}
           </div>
-          <button type="button" onClick={onClose} aria-label="Close dialog" className="hit shrink-0 p-1.5 rounded-full text-[var(--ink-muted)] hover:text-[var(--ink-primary)] hover:bg-[var(--surface-hover)] transition-colors cursor-pointer">
+          <Tooltip label="Close"><button type="button" onClick={onClose} aria-label="Close dialog" className="hit shrink-0 p-1.5 rounded-full text-[var(--ink-muted)] hover:text-[var(--ink-primary)] hover:bg-[var(--surface-hover)] transition-colors cursor-pointer">
             <Xmark className="w-5 h-5" />
-          </button>
+          </button></Tooltip>
         </div>
         <div>{children}</div>
       </motion.div>

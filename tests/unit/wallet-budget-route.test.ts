@@ -19,7 +19,7 @@ const walletAddress = `0x${'a'.repeat(64)}`;
 const userId = '10000000-0000-4000-8000-000000000001';
 const existingGoal = {
   id: 'goal-1', user_id: userId, name: 'Emergency fund', target_amount_minor: '1000000',
-  current_amount_minor: '200000', currency: 'INR', target_date: null, status: 'active',
+  current_amount_minor: '200000', currency: 'USD', target_date: null, status: 'active',
   created_at: new Date('2026-01-01T00:00:00Z'), updated_at: new Date('2026-01-01T00:00:00Z'),
 };
 
@@ -40,7 +40,7 @@ describe('wallet-authenticated savings goal API', () => {
 
   it('creates a savings goal in the verified wallet transaction', async () => {
     mocks.query.mockResolvedValue({ rows: [{ ...existingGoal, id: 'goal-new', name: 'Laptop', target_amount_minor: '1500000', current_amount_minor: '0' }] });
-    const response = await POST(request({ action: 'create-goal', name: 'Laptop', targetAmountMinor: 1_500_000, currency: 'INR' }));
+    const response = await POST(request({ action: 'create-goal', name: 'Laptop', targetAmountMinor: 1_500_000, currency: 'USD' }));
     const body = await response.json();
 
     expect(response.status).toBe(201);

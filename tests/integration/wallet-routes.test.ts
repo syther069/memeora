@@ -124,8 +124,8 @@ describe('wallet sign-in through Assistant and memory routes', () => {
     const otherCookie = await signIn(new Ed25519Keypair());
 
     // Without consent nothing is stored and the Assistant reports it.
-    expect((await rememberRoute(json('/api/memory/remember', { category: 'preference', text: 'Keep a ₹3,000 buffer' }, cookie))).status).toBe(403);
-    const before = await (await assistantRoute(json('/api/assistant/chat', { prompt: 'Can I afford ₹4,500?', cycleMonth: '2026-11' }, cookie))).json();
+    expect((await rememberRoute(json('/api/memory/remember', { category: 'preference', text: 'Keep a $3,000 buffer' }, cookie))).status).toBe(403);
+    const before = await (await assistantRoute(json('/api/assistant/chat', { prompt: 'Can I afford $4,500?', cycleMonth: '2026-11' }, cookie))).json();
     expect(before.data.memoryStatus).toBe('not_consented');
 
     const consent = consentPut(new NextRequest('http://localhost:3000/api/memory/consent', {
@@ -136,7 +136,7 @@ describe('wallet sign-in through Assistant and memory routes', () => {
     expect((await consent).status).toBe(200);
 
     // With consent but no Walrus account of its own, a wallet cannot save, and nothing is queued.
-    const blocked = await rememberRoute(json('/api/memory/remember', { category: 'preference', text: 'Keep a ₹3,000 buffer' }, cookie));
+    const blocked = await rememberRoute(json('/api/memory/remember', { category: 'preference', text: 'Keep a $3,000 buffer' }, cookie));
     expect(blocked.status).toBe(409);
     expect((await blocked.json()).error.code).toBe('MEMORY_ACCOUNT_REQUIRED');
     const unset = await (await recallRoute(json('/api/memory/recall', {}, cookie))).json();
@@ -146,7 +146,7 @@ describe('wallet sign-in through Assistant and memory routes', () => {
     // Walrus is down here, so the write is honestly queued, never faked as confirmed.
     await giveReadyMemoryAccount(db.instance!, keypair.toSuiAddress());
     relayer.down = true;
-    const remembered = await rememberRoute(json('/api/memory/remember', { category: 'preference', text: 'Keep a ₹3,000 buffer' }, cookie));
+    const remembered = await rememberRoute(json('/api/memory/remember', { category: 'preference', text: 'Keep a $3,000 buffer' }, cookie));
     const memory = (await remembered.json()).data;
     expect(remembered.status).toBe(202);
     expect(memory).toMatchObject({ walrusStatus: 'pending_retry', walrusBlobId: null });
@@ -155,7 +155,7 @@ describe('wallet sign-in through Assistant and memory routes', () => {
     expect(recalled.data.memories.map((m: { id: string }) => m.id)).toEqual([memory.id]);
     expect((await (await recallRoute(json('/api/memory/recall', {}, otherCookie))).json()).data.count).toBe(0);
 
-    const used = await (await assistantRoute(json('/api/assistant/chat', { prompt: 'Can I afford ₹4,500?', cycleMonth: '2026-11' }, cookie))).json();
+    const used = await (await assistantRoute(json('/api/assistant/chat', { prompt: 'Can I afford $4,500?', cycleMonth: '2026-11' }, cookie))).json();
     expect(used.data.memoryStatus).toBe('used');
     expect(used.data.recalledMemories.map((m: { id: string }) => m.id)).toEqual([memory.id]);
 
@@ -166,7 +166,7 @@ describe('wallet sign-in through Assistant and memory routes', () => {
     expect((await deleteRequest(otherCookie)).status).toBe(404);
     expect((await deleteRequest(cookie)).status).toBe(200);
 
-    const after = await (await assistantRoute(json('/api/assistant/chat', { prompt: 'Can I afford ₹4,500?', cycleMonth: '2026-11' }, cookie))).json();
+    const after = await (await assistantRoute(json('/api/assistant/chat', { prompt: 'Can I afford $4,500?', cycleMonth: '2026-11' }, cookie))).json();
     expect(after.data.memoryStatus).toBe('none_found');
   });
 
@@ -208,11 +208,11 @@ describe('wallet sign-in through Assistant and memory routes', () => {
     await enableConsent(cookie);
     await giveReadyMemoryAccount(db.instance!, wallet);
     // A memory already in this wallet's namespace, written by another MemWal client.
-    relayer.seed(namespace, 'Memeora category: budget. Cap cab rides at ₹1,500 per month', 'blob-seeded');
+    relayer.seed(namespace, 'Memeora category: budget. Cap cab rides at $1,500 per month', 'blob-seeded');
     relayer.jobs.get('seed-blob-seeded')!.checks = 2;
 
     // Fix 4: the write returns at once as a background job, in the wallet's namespace (fix 5).
-    const remembered = await rememberRoute(json('/api/memory/remember', { category: 'preference', text: 'Keep a ₹3,000 buffer' }, cookie));
+    const remembered = await rememberRoute(json('/api/memory/remember', { category: 'preference', text: 'Keep a $3,000 buffer' }, cookie));
     const memory = (await remembered.json()).data;
     expect(remembered.status).toBe(202);
     expect(memory).toMatchObject({ walrusStatus: 'pending', walrusJobId: memory.id, walrusBlobId: null });
@@ -231,7 +231,7 @@ describe('wallet sign-in through Assistant and memory routes', () => {
     expect(page.count).toBe(2);
 
     // Fix 3: the Assistant's memories come from Walrus recall in this namespace.
-    const ask = async () => (await (await assistantRoute(json('/api/assistant/chat', { prompt: 'Can I afford ₹4,500?', cycleMonth: '2026-11' }, cookie))).json()).data;
+    const ask = async () => (await (await assistantRoute(json('/api/assistant/chat', { prompt: 'Can I afford $4,500?', cycleMonth: '2026-11' }, cookie))).json()).data;
     let answer = await ask();
     expect(answer.memorySource).toBe('walrus');
     expect(answer.recalledMemories.map((m: { id: string }) => m.id)).toContain(memory.id);
@@ -262,7 +262,7 @@ describe('wallet sign-in through Assistant and memory routes', () => {
     await giveReadyMemoryAccount(db.instance!, keypair.toSuiAddress());
 
     relayer.down = true;
-    const memory = (await (await rememberRoute(json('/api/memory/remember', { category: 'goal', text: 'Save ₹15,000 for Goa' }, cookie))).json()).data;
+    const memory = (await (await rememberRoute(json('/api/memory/remember', { category: 'goal', text: 'Save $15,000 for Goa' }, cookie))).json()).data;
     expect(memory).toMatchObject({ walrusStatus: 'pending_retry', walrusJobId: null });
 
     relayer.down = false;

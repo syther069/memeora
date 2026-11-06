@@ -36,7 +36,7 @@ export async function PUT(request: NextRequest) {
   if (cashMinor !== null && (typeof cashMinor !== 'number' || !Number.isSafeInteger(cashMinor) || cashMinor < 0)) {
     return jsonError('VALIDATION_ERROR', 'Cash must be zero or a positive amount.', 400);
   }
-  if (!isCurrencyCode(body?.currency)) return jsonError('VALIDATION_ERROR', 'Currency must be INR or USD.', 400);
+  if (!isCurrencyCode(body?.currency)) return jsonError('VALIDATION_ERROR', 'Choose a supported currency.', 400);
   const currency = body.currency;
   try {
     await withWalletTransaction(session.walletAddress, (client) => client.query(

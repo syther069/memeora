@@ -47,7 +47,7 @@ function parseGoalFields(
     fields.targetAmountMinor = input.targetAmountMinor;
   }
   if (input.currency !== undefined) {
-    if (!isCurrencyCode(input.currency)) return { ok: false, message: 'Currency must be INR or USD.' };
+    if (!isCurrencyCode(input.currency)) return { ok: false, message: 'Choose a supported currency.' };
     fields.currency = input.currency;
   }
   if (input.targetDate !== undefined) {
@@ -148,7 +148,7 @@ async function walletGet(request: NextRequest) {
         [session.userId, start, end, mode],
       ) as { rows: Array<Parameters<typeof toPeriodTotals>[0]> };
       return {
-        preferredCurrency: profile.rows[0]?.preferred_currency ?? 'INR',
+        preferredCurrency: profile.rows[0]?.preferred_currency ?? 'USD',
         budget: budget.rows[0] ? toBudget(budget.rows[0]) : null,
         goals: goals.rows.map(toSavingsGoal),
         periodTotals: totals.rows.map(toPeriodTotals),
@@ -174,8 +174,8 @@ async function walletPost(request: NextRequest) {
   if (idempotencyKey === null) return jsonError('VALIDATION_ERROR', 'The Idempotency-Key header is not valid.', 400);
   try {
     if (input.action === 'set-budget') {
-      const { period, amountMinor, currency = 'INR' } = input;
-      if (!isValidPeriod(period) || !isPositiveMinor(amountMinor) || !isCurrencyCode(currency)) return jsonError('VALIDATION_ERROR', 'A valid period, positive minor-unit amount, and INR or USD currency are required.', 400);
+      const { period, amountMinor, currency = 'USD' } = input;
+      if (!isValidPeriod(period) || !isPositiveMinor(amountMinor) || !isCurrencyCode(currency)) return jsonError('VALIDATION_ERROR', 'A valid period, positive minor-unit amount, and a supported currency are required.', 400);
       const result = await withWalletTransaction(session.walletAddress, async (client) => {
         const saved = await client.query(
           `INSERT INTO budgets(user_id, period, amount_minor, currency, mode)
@@ -203,7 +203,7 @@ async function walletPost(request: NextRequest) {
         const inserted = await client.query(
           `INSERT INTO savings_goals(user_id, name, target_amount_minor, current_amount_minor, currency, target_date, status, mode)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-          [session.userId, parsed.fields.name, parsed.fields.targetAmountMinor, currentAmountMinor, parsed.fields.currency ?? 'INR', parsed.fields.targetDate ?? null, currentAmountMinor >= (parsed.fields.targetAmountMinor as number) ? 'completed' : 'active', mode],
+          [session.userId, parsed.fields.name, parsed.fields.targetAmountMinor, currentAmountMinor, parsed.fields.currency ?? 'USD', parsed.fields.targetDate ?? null, currentAmountMinor >= (parsed.fields.targetAmountMinor as number) ? 'completed' : 'active', mode],
         ) as { rows: DbGoal[] };
         const created = { savingsGoal: serializeGoal(toSavingsGoal(inserted.rows[0])) };
         await storeIdempotentResponse(client, session.userId, scope, idempotencyKey, { status: 201, body: created });

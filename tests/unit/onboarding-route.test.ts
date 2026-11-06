@@ -27,7 +27,7 @@ describe('POST /api/onboarding', () => {
     const response = await POST(new NextRequest('http://localhost:3000/api/onboarding', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ action: 'complete', currency: 'INR' }),
+      body: JSON.stringify({ action: 'complete', currency: 'USD' }),
     }));
 
     expect(response.status).toBe(400);
@@ -40,7 +40,7 @@ describe('POST /api/onboarding', () => {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         action: 'complete',
-        currency: 'INR',
+        currency: 'USD',
         monthlyBudgetMinor: 2_000_000,
         savingsGoal: { name: 'Emergency fund', targetAmountMinor: 500_000, targetDate: '2099-12-31' },
         memoryConsentEnabled: false,
@@ -66,7 +66,7 @@ describe('POST /api/onboarding', () => {
     const response = await POST(new NextRequest('http://localhost:3000/api/onboarding', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-user-id': 'somebody-else' },
-      body: JSON.stringify({ action: 'complete', currency: 'INR', memoryConsentEnabled: false }),
+      body: JSON.stringify({ action: 'complete', currency: 'USD', memoryConsentEnabled: false }),
     }));
 
     expect(response.status).toBe(401);

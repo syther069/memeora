@@ -47,7 +47,7 @@ export async function readBusinessOverview(client: PostgresClient, userId: strin
   // The cash figure's currency if there is one, else whatever this month is mostly recorded in.
   const thisMonth = totals.rows.filter((entry) => entry.period === period);
   const mostUsed = [...thisMonth].sort((x, y) => Number(y.n) - Number(x.n) || x.currency.localeCompare(y.currency))[0]?.currency;
-  const currency = row?.business_cash_currency ?? mostUsed ?? row?.preferred_currency ?? 'INR';
+  const currency = row?.business_cash_currency ?? mostUsed ?? row?.preferred_currency ?? 'USD';
 
   const months: MonthTotals[] = periods.map((candidate) => {
     const entry = totals.rows.find((total) => total.period === candidate && total.currency === currency);

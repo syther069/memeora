@@ -65,14 +65,14 @@ describe('API routes with verified wallet sessions on PostgreSQL', () => {
       const cookie = await signIn();
       const status = async () => (await (await onboardingGet(getRequest('/api/onboarding', cookie))).json()).data.onboardingRequired;
       expect(await status()).toBe(true);
-      expect((await onboardingPost(jsonRequest('POST', '/api/onboarding', { action: 'complete', currency: 'INR' }, cookie))).status).toBe(400);
+      expect((await onboardingPost(jsonRequest('POST', '/api/onboarding', { action: 'complete', currency: 'USD' }, cookie))).status).toBe(400);
 
-      const saved = await onboardingPost(jsonRequest('POST', '/api/onboarding', { action: 'complete', currency: 'USD', memoryConsentEnabled: true, monthlyBudgetMinor: null, savingsGoal: null }, cookie));
+      const saved = await onboardingPost(jsonRequest('POST', '/api/onboarding', { action: 'complete', currency: 'USDC', memoryConsentEnabled: true, monthlyBudgetMinor: null, savingsGoal: null }, cookie));
       expect(saved.status).toBe(201);
       expect(await status()).toBe(false);
 
       const budgets = (await (await budgetsGet(getRequest('/api/budgets', cookie))).json()).data;
-      expect(budgets).toMatchObject({ preferredCurrency: 'USD', budget: null, savingsGoals: [] });
+      expect(budgets).toMatchObject({ preferredCurrency: 'USDC', budget: null, savingsGoals: [] });
       // Consent is recorded; saving still needs the wallet's own Walrus account.
       expect((await (await rememberRoute(jsonRequest('POST', '/api/memory/remember', { category: 'goal', text: 'Consent alone is not enough' }, cookie))).json()).error.code).toBe('MEMORY_ACCOUNT_REQUIRED');
     });
@@ -98,7 +98,7 @@ describe('API routes with verified wallet sessions on PostgreSQL', () => {
       const created = (await (await transactionsPost(jsonRequest('POST', '/api/transactions', { type: 'expense', amountMinor: 50000, category: 'Dining', occurredAt: '2026-11-03T12:00:00.000Z' }, cookie))).json()).data.transaction;
 
       const other = await signIn();
-      const edit = { type: 'expense', amountMinor: 70000, currency: 'INR', category: 'Groceries', description: 'Corrected', occurredAt: '2026-11-04T12:00:00.000Z' };
+      const edit = { type: 'expense', amountMinor: 70000, currency: 'USD', category: 'Groceries', description: 'Corrected', occurredAt: '2026-11-04T12:00:00.000Z' };
       expect((await transactionPatch(patchRequest(created.id, edit, other), params(created.id))).status).toBe(404);
       expect((await transactionDelete(deleteRequest(`/api/transactions/${created.id}`, other), params(created.id))).status).toBe(404);
       expect((await transactionPatch(patchRequest(created.id, { ...edit, amountMinor: 1.5 }, cookie), params(created.id))).status).toBe(400);
@@ -125,7 +125,7 @@ describe('API routes with verified wallet sessions on PostgreSQL', () => {
     it('creates account-scoped transactions, ignores a body userId, and applies filters', async () => {
       const cookie = await signIn();
       const created = await transactionsPost(jsonRequest('POST', '/api/transactions', {
-        userId: 'spoofed-user', type: 'expense', amountMinor: 12850, currency: 'INR', category: 'Dining', description: 'Lunch', occurredAt: '2026-11-03T10:00:00.000Z',
+        userId: 'spoofed-user', type: 'expense', amountMinor: 12850, currency: 'USD', category: 'Dining', description: 'Lunch', occurredAt: '2026-11-03T10:00:00.000Z',
       }, cookie));
       expect(created.status).toBe(201);
       await transactionsPost(jsonRequest('POST', '/api/transactions', { type: 'income', amountMinor: 500000, category: 'Salary' }, cookie));
@@ -167,29 +167,29 @@ describe('API routes with verified wallet sessions on PostgreSQL', () => {
         await tx.query("SELECT set_config('memeora.wallet_address', $1, TRUE)", [session.walletAddress]);
         await tx.query(
           `INSERT INTO transactions(user_id, type, amount_minor, currency, category, occurred_at)
-           SELECT $1::uuid, 'expense', 1000, 'INR', 'Groceries', TIMESTAMPTZ '2026-11-15T10:00:00Z' + (n || ' seconds')::interval
+           SELECT $1::uuid, 'expense', 1000, 'USD', 'Groceries', TIMESTAMPTZ '2026-11-15T10:00:00Z' + (n || ' seconds')::interval
            FROM generate_series(1, 120) AS n`,
           [session.userId],
         );
         await tx.query(
           `INSERT INTO transactions(user_id, type, amount_minor, currency, category, occurred_at) VALUES
-             ($1, 'income', 500000, 'INR', 'Salary', '2026-11-01T00:00:00Z'),
-             ($1, 'expense', 777, 'INR', 'Rent', '2026-10-31T23:59:59Z'),
-             ($1, 'expense', 777, 'INR', 'Rent', '2026-12-01T00:00:00Z'),
-             ($1, 'expense', 2500, 'USD', 'Travel', '2026-11-20T10:00:00Z')`,
+             ($1, 'income', 500000, 'USD', 'Salary', '2026-11-01T00:00:00Z'),
+             ($1, 'expense', 777, 'USD', 'Rent', '2026-10-31T23:59:59Z'),
+             ($1, 'expense', 777, 'USD', 'Rent', '2026-12-01T00:00:00Z'),
+             ($1, 'expense', 2500, 'USDC', 'Travel', '2026-11-20T10:00:00Z')`,
           [session.userId],
         );
       });
 
       const totals = (await (await budgetsGet(getRequest('/api/budgets?period=2026-11', cookie))).json()).data.periodTotals;
       expect(totals).toEqual([
-        { currency: 'INR', incomeMinor: 500000, expenseMinor: 120000, netMinor: 380000, transactionCount: 121 },
-        { currency: 'USD', incomeMinor: 0, expenseMinor: 2500, netMinor: -2500, transactionCount: 1 },
+        { currency: 'USD', incomeMinor: 500000, expenseMinor: 120000, netMinor: 380000, transactionCount: 121 },
+        { currency: 'USDC', incomeMinor: 0, expenseMinor: 2500, netMinor: -2500, transactionCount: 1 },
       ]);
 
       await budgetsPost(jsonRequest('POST', '/api/budgets', { action: 'set-budget', period: '2026-11', amountMinor: 200000 }, cookie));
       const answer = (await (await assistantRoute(jsonRequest('POST', '/api/assistant/chat', { prompt: 'How much did I spend?', cycleMonth: '2026-11' }, cookie))).json()).data;
-      expect(answer.calculationContext).toMatchObject({ spentMinor: 120000, remainingBudgetMinor: 80000, incomeFormatted: '₹5,000.00' });
+      expect(answer.calculationContext).toMatchObject({ spentMinor: 120000, remainingBudgetMinor: 80000, incomeFormatted: '$5,000.00' });
       expect(answer.calculationContext.recordWindowDescription).toBe('All ledger records saved for 2026-11 (UTC).');
     });
 
@@ -201,7 +201,7 @@ describe('API routes with verified wallet sessions on PostgreSQL', () => {
 
     it('creates, edits, pauses, resumes, completes, and deletes a goal only for its owner', async () => {
       const cookie = await signIn();
-      const created = await goalAction(cookie, { action: 'create-goal', name: '  Goa trip  ', targetAmountMinor: 1500000, currency: 'INR', targetDate: '2099-12-01' });
+      const created = await goalAction(cookie, { action: 'create-goal', name: '  Goa trip  ', targetAmountMinor: 1500000, currency: 'USD', targetDate: '2099-12-01' });
       expect(created.status).toBe(201);
       const goal = (await created.json()).data.savingsGoal;
       expect(goal).toMatchObject({ name: 'Goa trip', currentAmountMinor: 0, status: 'active', targetDate: '2099-12-01' });
@@ -232,7 +232,7 @@ describe('API routes with verified wallet sessions on PostgreSQL', () => {
       expect((await goalAction(cookie, { action: 'create-goal', name: 'x'.repeat(101), targetAmountMinor: 1000 })).status).toBe(400);
 
       const goal = (await (await goalAction(cookie, { action: 'create-goal', name: 'Laptop', targetAmountMinor: 10000, currentAmountMinor: 4000 })).json()).data.savingsGoal;
-      expect((await goalAction(cookie, { action: 'update-goal', goalId: goal.id, currency: 'USD' })).status).toBe(409);
+      expect((await goalAction(cookie, { action: 'update-goal', goalId: goal.id, currency: 'USDC' })).status).toBe(409);
       expect((await (await goalAction(cookie, { action: 'update-goal', goalId: goal.id, targetAmountMinor: 4000 })).json()).data.savingsGoal.status).toBe('completed');
       expect((await goalAction(cookie, { action: 'set-goal-status', goalId: goal.id, status: 'paused' })).status).toBe(409);
       expect((await (await goalAction(cookie, { action: 'update-goal', goalId: goal.id, targetAmountMinor: 20000 })).json()).data.savingsGoal.status).toBe('active');
@@ -274,7 +274,7 @@ describe('API routes with verified wallet sessions on PostgreSQL', () => {
     const ask = (body: Record<string, unknown>, cookie?: string) => assistantRoute(jsonRequest('POST', '/api/assistant/chat', body, cookie));
 
     it('requires a wallet session and validates the prompt and month', async () => {
-      expect((await ask({ prompt: 'Can I afford ₹500?' })).status).toBe(401);
+      expect((await ask({ prompt: 'Can I afford $500?' })).status).toBe(401);
       const cookie = await signIn();
       expect((await ask({ prompt: '' }, cookie)).status).toBe(400);
       expect((await ask({ prompt: 'How much did I spend?', cycleMonth: '2026-13' }, cookie)).status).toBe(400);
@@ -282,8 +282,8 @@ describe('API routes with verified wallet sessions on PostgreSQL', () => {
 
     it('says a purchase cannot be assessed when no budget is saved', async () => {
       const cookie = await signIn();
-      const data = (await (await ask({ prompt: 'Can I afford a ₹5,000 laptop repair this month?', cycleMonth: '2026-11' }, cookie)).json()).data;
-      expect(data.calculationContext).toMatchObject({ remainingBudgetFormatted: 'No INR budget is set for 2026-11', spentMinor: 0, incomeFormatted: '₹0.00' });
+      const data = (await (await ask({ prompt: 'Can I afford a $5,000 laptop repair this month?', cycleMonth: '2026-11' }, cookie)).json()).data;
+      expect(data.calculationContext).toMatchObject({ remainingBudgetFormatted: 'No USD budget is set for 2026-11', spentMinor: 0, incomeFormatted: '$0.00' });
       expect(data.calculationContext.verdict).toContain('cannot be assessed against a budget');
       expect(data.memoryStatus).toBe('not_consented');
     });
@@ -292,9 +292,9 @@ describe('API routes with verified wallet sessions on PostgreSQL', () => {
       const cookie = await signIn();
       await budgetsPost(jsonRequest('POST', '/api/budgets', { action: 'set-budget', period: '2026-11', amountMinor: 1500000 }, cookie));
       await transactionsPost(jsonRequest('POST', '/api/transactions', { type: 'expense', amountMinor: 840000, category: 'Rent', occurredAt: '2026-11-02T10:00:00.000Z' }, cookie));
-      const data = (await (await ask({ prompt: 'Can I afford a ₹1,500 purchase?', cycleMonth: '2026-11' }, cookie)).json()).data;
+      const data = (await (await ask({ prompt: 'Can I afford a $1,500 purchase?', cycleMonth: '2026-11' }, cookie)).json()).data;
       expect(data.calculationContext).toMatchObject({ budgetLimitMinor: 1500000, spentMinor: 840000, remainingBudgetMinor: 660000, proposedPurchaseMinor: 150000 });
-      expect(data.calculationContext.verdict).toContain('leaving ₹5,100.00');
+      expect(data.calculationContext.verdict).toContain('leaving $5,100.00');
     });
   });
 
@@ -326,7 +326,7 @@ describe('API routes with verified wallet sessions on PostgreSQL', () => {
         await tx.query("SELECT set_config('memeora.wallet_address', $1, TRUE)", [session.walletAddress]);
         await tx.query(
           `INSERT INTO financial_memories(user_id, category, memory_text, walrus_blob_id, walrus_job_id, walrus_status)
-           VALUES ($1, 'preference', 'Keep a ₹3,000 buffer', 'blob-x', 'job-x', 'confirmed')`,
+           VALUES ($1, 'preference', 'Keep a $3,000 buffer', 'blob-x', 'job-x', 'confirmed')`,
           [session.userId],
         );
       });

@@ -1,8 +1,11 @@
 'use client';
 
 import * as React from 'react';
-import Link from 'next/link';
+import { AnimatePresence } from 'framer-motion';
+import { AnimatedLink } from '@/components/ui/animated-link';
+import { MotionRow } from '@/components/ui/motion-row';
 import { Card } from '@/components/ui/card';
+import { Tooltip } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
@@ -58,10 +61,9 @@ const PENDING_REFRESH_MS = 8000;
 export default function MemoryPage() {
   const { toast } = useToast();
   const undoable = useUndoable();
-  const { preferredCurrency, walletAddress: sessionWallet, mode } = useAppSession();
+  const { walletAddress: sessionWallet, mode } = useAppSession();
   const isBusiness = mode === 'business';
   const walletAddress = sessionWallet ?? '';
-  const symbol = preferredCurrency === 'USD' ? '$' : '₹';
   const [consentEnabled, setConsentEnabled] = React.useState<boolean | null>(null);
   const [isChangingConsent, setIsChangingConsent] = React.useState(false);
   const [memories, setMemories] = React.useState<MemoryItem[]>([]);
@@ -84,12 +86,12 @@ export default function MemoryPage() {
 
   const examples: Array<{ category: Category; text: string }> = isBusiness ? [
     { category: 'preference', text: 'Always keep at least 6 months of runway before any new hire.' },
-    { category: 'budget', text: `Keep cloud and infrastructure costs under ${symbol}50,000 per month.` },
-    { category: 'goal', text: `We are raising ${symbol}50,00,000 by next March and need to show steady revenue.` },
+    { category: 'budget', text: 'Keep cloud and infrastructure costs under $5,000 per month.' },
+    { category: 'goal', text: 'We are raising $500,000 by next March and need to show steady revenue.' },
   ] : [
-    { category: 'preference', text: `Always keep at least ${symbol}3,000 untouched before any non-essential purchase.` },
-    { category: 'budget', text: `Keep dining out under ${symbol}3,500 per month.` },
-    { category: 'goal', text: `I am saving ${symbol}25,000 for an emergency fund by next March.` },
+    { category: 'preference', text: 'Always keep at least $300 untouched before any non-essential purchase.' },
+    { category: 'budget', text: 'Keep dining out under $350 per month.' },
+    { category: 'goal', text: 'I am saving $2,500 for an emergency fund by next March.' },
   ];
 
   /** Checks Walrus: confirms finished writes and picks up memories stored elsewhere. */
@@ -405,12 +407,13 @@ export default function MemoryPage() {
             onAction={canSave ? () => setIsAddModalOpen(true) : undefined}
           />
         ) : (
-          <ul aria-label="Your memories" className="space-y-3">
+          <ul aria-label="Your memories">
+<AnimatePresence initial={false}>
             {memories.map((mem) => {
               const status = WALRUS_STATUS[mem.walrusStatus ?? ''];
               return (
-                <li key={mem.id}>
-                  <Card className="p-4 sm:p-5 flex items-start justify-between gap-4">
+                <MotionRow key={mem.id}>
+                  <div className="pb-3"><Card className="p-4 sm:p-5 flex items-start justify-between gap-4">
                     <div className="min-w-0 flex-1 space-y-2">
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge variant="sky" className="text-[11px] font-bold">{CATEGORY_LABELS[mem.category].label}</Badge>
@@ -424,20 +427,23 @@ export default function MemoryPage() {
                         </button>
                       )}
                     </div>
-                    <button type="button" onClick={() => setMemoryToRemove(mem)} aria-label={`Hide or delete memory: ${mem.text.slice(0, 40)}`} className="p-2 text-[var(--ink-muted)] hover:text-[var(--accent-danger)] hover:bg-[var(--accent-danger-bg)] rounded-xl transition-colors cursor-pointer">
-                      <Trash className="w-4 h-4" />
-                    </button>
-                  </Card>
-                </li>
+                    <Tooltip label="Hide or delete">
+                      <button type="button" onClick={() => setMemoryToRemove(mem)} aria-label={`Hide or delete memory: ${mem.text.slice(0, 40)}`} className="p-2 text-[var(--ink-muted)] hover:text-[var(--accent-danger)] hover:bg-[var(--accent-danger-bg)] rounded-xl transition-colors cursor-pointer">
+                        <Trash className="w-4 h-4" />
+                      </button>
+                    </Tooltip>
+                  </Card></div>
+                </MotionRow>
               );
             })}
+</AnimatePresence>
           </ul>
         )}
 
         {memories.length > 0 && (
           <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs font-bold">
-            <Link href="/assistant" className="inline-flex items-center gap-1 text-[var(--brand-blue)] hover:underline">See it change your advice: ask the Assistant<ArrowRight className="w-3.5 h-3.5" /></Link>
-            {storedCount > 0 && <Link href="/verification" className="inline-flex items-center gap-1 text-[var(--brand-blue)] hover:underline">Check it on Sui<ArrowRight className="w-3.5 h-3.5" /></Link>}
+            <AnimatedLink href="/assistant" className="gap-1 text-[var(--brand-blue)]">See it change your advice: ask the Assistant<ArrowRight className="w-3.5 h-3.5" /></AnimatedLink>
+            {storedCount > 0 && <AnimatedLink href="/verification" className="gap-1 text-[var(--brand-blue)]">Check it on Sui<ArrowRight className="w-3.5 h-3.5" /></AnimatedLink>}
           </div>
         )}
       </section>

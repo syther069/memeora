@@ -2,12 +2,15 @@
 
 import * as React from 'react';
 import { ArrowRight, NavArrowLeft } from 'iconoir-react';
+import { IntegrationLogo } from '@/components/brand/integration-logo';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { cn } from '@/lib/utils';
 
 interface Slide {
   title: string;
+  /** Shown beside the title when the slide is about that integration. */
+  logo?: 'walrus' | 'sui';
   /** A real screen, captured with a throwaway wallet and sample data. */
   image?: { src: string; alt: string };
   points: string[];
@@ -51,6 +54,7 @@ const SLIDES: Slide[] = [
   },
   {
     title: 'Save rules with Walrus Memory',
+    logo: 'walrus',
     image: { src: '/guide/memory.jpg', alt: 'The Memory page, with the memory switch and a list of saved rules.' },
     points: [
       'Nothing is stored until you turn memory on and save something. Only the text you save goes to Walrus, encrypted. Your transactions do not.',
@@ -70,6 +74,7 @@ const SLIDES: Slide[] = [
   },
   {
     title: 'Check it on Sui',
+    logo: 'sui',
     image: { src: '/guide/proof.jpg', alt: 'The On-chain proof page, with memory checks and live Sui Mainnet checks.' },
     points: [
       'On-chain proof reads Sui Mainnet through Tatum and checks each memory’s Walrus object against what Memeora recorded.',
@@ -144,7 +149,7 @@ export function GuideDialog({ onClose }: { onClose: () => void }) {
         </div>
 
         <div key={slide.title} className="[animation:page-enter_200ms_var(--ease-out)]">
-          <h3 ref={headingRef} tabIndex={-1} className="text-xl font-bold tracking-tight text-[var(--ink-primary)] focus:outline-none">{slide.title}</h3>
+          <h3 ref={headingRef} tabIndex={-1} className="flex items-center gap-2.5 text-xl font-bold tracking-tight text-[var(--ink-primary)] focus:outline-none">{slide.logo && <IntegrationLogo name={slide.logo} size={26} decorative />}{slide.title}</h3>
           {slide.image && (
             <figure className="mt-3">
               {failedImages.has(slide.image.src)

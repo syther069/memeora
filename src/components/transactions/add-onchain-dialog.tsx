@@ -1,5 +1,7 @@
 'use client';
 
+import { CurrencyOptions } from '@/components/ui/currency-options';
+import type { CurrencyCode } from '@/modules/finance/domain/money';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,7 +37,7 @@ export function AddOnChainDialog({ onClose, onSaved, onUseSui }: {
   const [assetSymbol, setAssetSymbol] = React.useState('');
   const [assetAmount, setAssetAmount] = React.useState('');
   const [value, setValue] = React.useState('');
-  const [currency, setCurrency] = React.useState<'INR' | 'USD'>(preferredCurrency);
+  const [currency, setCurrency] = React.useState<CurrencyCode>(preferredCurrency);
   const [category, setCategory] = React.useState(categoriesFor(mode, 'expense', true)[0]);
   const [date, setDate] = React.useState(localDateInput());
   const [note, setNote] = React.useState('');
@@ -112,9 +114,8 @@ export function AddOnChainDialog({ onClose, onSaved, onUseSui }: {
           <Input label="Value in your ledger" type="number" inputMode="decimal" min="0.01" step="0.01" required placeholder="0.00" value={value} onChange={(event) => setValue(event.target.value)} />
           <div className="space-y-1.5 text-left">
             <label htmlFor="onchain-currency" className="block text-xs font-bold text-[var(--ink-primary)]">Currency</label>
-            <select id="onchain-currency" value={currency} onChange={(event) => setCurrency(event.target.value as 'INR' | 'USD')} className={selectClass}>
-              <option value="INR">INR ₹</option>
-              <option value="USD">USD $</option>
+            <select id="onchain-currency" value={currency} onChange={(event) => setCurrency(event.target.value as CurrencyCode)} className={selectClass}>
+              <CurrencyOptions />
             </select>
           </div>
         </div>

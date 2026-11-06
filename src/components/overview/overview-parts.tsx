@@ -1,15 +1,18 @@
 'use client';
 
+import type { CurrencyCode } from '@/modules/finance/domain/money';
 import * as React from 'react';
 import Link from 'next/link';
 import { ArrowRight, Brain, Check } from 'iconoir-react';
+import { AnimatedLink } from '@/components/ui/animated-link';
 import { Badge } from '@/components/ui/badge';
+import { Expand } from '@/components/ui/expand';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatPeriod } from '@/lib/dates';
 import { formatMoney } from '@/lib/finance-api';
 
-export type Currency = 'INR' | 'USD';
+export type Currency = CurrencyCode;
 
 export interface OverviewPayload {
   period: string;
@@ -38,9 +41,9 @@ export function SectionHead({ title, note, href, action }: { title: string; note
         {note && <p className="mt-0.5 text-xs text-[var(--ink-muted)]">{note}</p>}
       </div>
       {href && action && (
-        <Link href={href} className="hit inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-[var(--brand-blue)] hover:underline">
+        <AnimatedLink href={href} className="hit shrink-0 gap-1 text-xs font-semibold text-[var(--brand-blue)]">
           {action}<ArrowRight aria-hidden className="h-3.5 w-3.5" />
-        </Link>
+        </AnimatedLink>
       )}
     </div>
   );
@@ -63,8 +66,8 @@ export function MonthBars({ data, currency, incomeLabel = 'Income', expenseLabel
         {rows.map((row) => (
           <div key={row.period} title={`${formatPeriod(row.period)}: ${formatMoney(row.income, currency)} in, ${formatMoney(row.expense, currency)} out`} className="flex h-full flex-col justify-end">
             <div className="flex h-full items-end justify-center gap-1">
-              <div className={`w-full max-w-7 rounded-t-lg ${row.income ? 'border border-[var(--brand-blue)]' : ''}`} style={{ height: `${Math.max(row.income ? 3 : 0, (row.income / max) * 100)}%`, backgroundImage: 'var(--hatch-soft)' }} />
-              <div className="w-full max-w-7 rounded-t-lg" style={{ height: `${Math.max(row.expense ? 3 : 0, (row.expense / max) * 100)}%`, backgroundImage: 'var(--hatch-blue)' }} />
+              <div className={`bar-grow w-full max-w-7 rounded-t-lg ${row.income ? 'border border-[var(--brand-blue)]' : ''}`} style={{ height: `${Math.max(row.income ? 3 : 0, (row.income / max) * 100)}%`, backgroundImage: 'var(--hatch-soft)' }} />
+              <div className="bar-grow w-full max-w-7 rounded-t-lg" style={{ height: `${Math.max(row.expense ? 3 : 0, (row.expense / max) * 100)}%`, backgroundImage: 'var(--hatch-blue)' }} />
             </div>
           </div>
         ))}
@@ -77,14 +80,13 @@ export function MonthBars({ data, currency, incomeLabel = 'Income', expenseLabel
         <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundImage: 'var(--hatch-blue)' }} />{expenseLabel}</span>
         <span className="ml-auto text-[var(--ink-muted)]">In {currency}, as recorded</span>
       </div>
-      <details className="mt-3 text-xs text-[var(--ink-secondary)]">
-        <summary className="hit w-fit cursor-pointer font-semibold text-[var(--brand-blue)]">See the figures</summary>
+      <Expand label="See the figures" className="mt-3 text-xs text-[var(--ink-secondary)]">
         <table className="mt-2 w-full tabular-nums">
           <caption className="sr-only">{incomeLabel} and {expenseLabel.toLowerCase()} by month, in {currency}</caption>
           <thead><tr className="text-left text-[var(--ink-muted)]"><th scope="col" className="py-1 font-medium">Month</th><th scope="col" className="py-1 text-right font-medium">{incomeLabel}</th><th scope="col" className="py-1 text-right font-medium">{expenseLabel}</th></tr></thead>
           <tbody>{rows.map((row) => <tr key={row.period} className="border-t border-[var(--border-subtle)]"><th scope="row" className="py-1 text-left font-normal">{formatPeriod(row.period)}</th><td className="py-1 text-right">{formatMoney(row.income, currency)}</td><td className="py-1 text-right">{formatMoney(row.expense, currency)}</td></tr>)}</tbody>
         </table>
-      </details>
+      </Expand>
     </div>
   );
 }

@@ -3,6 +3,9 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { ArrowRight, Page, Sparks, Plus } from 'iconoir-react';
+import { AnimatePresence } from 'framer-motion';
+import { Expand } from '@/components/ui/expand';
+import { RollingAmount } from '@/components/ui/rolling-amount';
 import { useAppSession } from '@/components/auth/app-session-guard';
 import { useLedger } from '@/components/layout/ledger-provider';
 import { CategoryBars, GuideStrip, MonthBars, RulesPanel, SectionHead, UsageGauge, type MemorySummary, type OverviewPayload } from '@/components/overview/overview-parts';
@@ -47,7 +50,6 @@ export default function PersonalOverviewPage() {
   const figuresFailed = Boolean(budgets.error) && !hasData;
   const hasTransactions = transactions.length > 0;
   const hasMemory = (memory.data?.total ?? 0) > 0;
-  const symbol = preferredCurrency === 'USD' ? '$' : '₹';
   const showGuide = hasData && Boolean(ledger.data) && !(hasTransactions && hasMemory);
 
   return (
@@ -59,7 +61,7 @@ export default function PersonalOverviewPage() {
           title="Get started"
           steps={[
             { title: 'Transaction recorded', action: 'Add your first transaction', done: hasTransactions, onClick: openAddTransaction },
-            { title: 'Rule saved', action: `Save a rule, like “keep a ${symbol}3,000 buffer”`, done: hasMemory, href: '/memory' },
+            { title: 'Rule saved', action: 'Save a rule, like “keep a $300 buffer”', done: hasMemory, href: '/memory' },
             { title: 'Ask the Assistant', action: 'Ask “can I afford this?”', done: false, href: '/assistant' },
             { title: 'See the proof', action: 'Check your memories on Sui', done: false, href: '/verification' },
           ]}
@@ -79,7 +81,7 @@ export default function PersonalOverviewPage() {
           <div>
             <p className="text-xs font-medium text-[var(--ink-on-blue-muted)]">Left over in {periodLabel}</p>
             {hasData
-              ? <p className="mt-1 text-4xl font-bold tracking-tight tabular-nums sm:text-5xl">{netMinor < 0 ? '−' : ''}{formatMoney(Math.abs(netMinor), currency)}</p>
+              ? <p className="mt-1 text-4xl font-bold tracking-tight tabular-nums sm:text-5xl">{netMinor < 0 ? '−' : ''}<RollingAmount key={currency} minor={Math.abs(netMinor)} format={(minor) => formatMoney(minor, currency)} /></p>
               : figuresFailed ? <p className="mt-2 text-2xl font-bold">Unavailable</p> : <Skeleton className="mt-2 h-12 w-48 bg-white/20" />}
             <p className="mt-1.5 text-xs text-[var(--ink-on-blue-muted)]">Income minus spending you recorded. Not your bank balance.</p>
           </div>
@@ -93,6 +95,7 @@ export default function PersonalOverviewPage() {
               <dd className="mt-0.5 text-lg font-semibold tabular-nums">{hasData ? formatMoney(expenseMinor, currency) : '—'}</dd>
             </div>
           </dl>
+          {hasData && <Expand label="How this is worked out" className="on-blue -mt-3 text-xs" summaryClassName="text-[var(--ink-inverse)]!"><p className="pt-2 tabular-nums text-[var(--ink-on-blue-muted)]">income {formatMoney(totals?.incomeMinor ?? 0, currency)} minus spending {formatMoney(expenseMinor, currency)} is {`${netMinor < 0 ? '−' : ''}${formatMoney(Math.abs(netMinor), currency)}`}.</p></Expand>}
         </Card>
 
         <Card className="flex flex-col lg:col-span-3">
@@ -136,7 +139,7 @@ export default function PersonalOverviewPage() {
           {ledger.isLoading ? <ListSkeleton rows={3} label="Loading transactions" />
             : ledger.error && !ledger.data ? <p className="py-6 text-center text-xs text-[var(--ink-secondary)]">Transactions are unavailable right now. <button type="button" onClick={() => void ledger.refresh()} className="font-semibold text-[var(--brand-blue)] underline cursor-pointer">Try again</button></p>
               : !hasTransactions ? <EmptyState icon={<Page className="h-6 w-6" />} title="No transactions yet" description="Add your first income or expense to see your month take shape." actionLabel="Add a transaction" onAction={openAddTransaction} />
-                : <ul className="divide-y divide-[var(--border-subtle)]">{transactions.map((tx) => <TxRow key={tx.id} tx={tx} />)}</ul>}
+                : <ul className="divide-y divide-[var(--border-subtle)]"><AnimatePresence initial={false}>{transactions.map((tx) => <TxRow key={tx.id} tx={tx} />)}</AnimatePresence></ul>}
         </Card>
 
         <div className="flex flex-col gap-4 lg:col-span-5">

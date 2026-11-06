@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { AnimatedLink } from '@/components/ui/animated-link';
 import { Card, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -136,14 +137,14 @@ export function MemoryProofs() {
                   <span>Walrus blob <code className="text-[var(--ink-primary)]">{short(proof.blobId)}</code></span>
                   {proof.certifiedEpoch !== null && <span>Certified at Walrus epoch {proof.certifiedEpoch} · stored until epoch {proof.storageEndEpoch ?? '—'}</span>}
                   {proof.suiObjectId && (
-                    <a className="inline-flex items-center gap-1 font-semibold text-[var(--brand-blue)] hover:underline" href={`${SUISCAN}/object/${proof.suiObjectId}`} target="_blank" rel="noopener noreferrer">
+                    <AnimatedLink arrow={false} className="gap-1 font-semibold text-[var(--brand-blue)]" href={`${SUISCAN}/object/${proof.suiObjectId}`}>
                       Sui object {short(proof.suiObjectId)} <OpenNewWindow aria-hidden className="h-3 w-3" />
-                    </a>
+                    </AnimatedLink>
                   )}
                   {proof.transactionDigest && (
-                    <a className="inline-flex items-center gap-1 font-semibold text-[var(--brand-blue)] hover:underline" href={`${SUISCAN}/tx/${proof.transactionDigest}`} target="_blank" rel="noopener noreferrer">
+                    <AnimatedLink arrow={false} className="gap-1 font-semibold text-[var(--brand-blue)]" href={`${SUISCAN}/tx/${proof.transactionDigest}`}>
                       Last transaction {short(proof.transactionDigest)} <OpenNewWindow aria-hidden className="h-3 w-3" />
-                    </a>
+                    </AnimatedLink>
                   )}
                 </div>
                 {proof.status === 'mismatch' && proof.onChainNamespace && !proof.checks.namespaceMatches && (

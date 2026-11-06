@@ -24,8 +24,8 @@ export async function GET(request: NextRequest) {
   const params = new URL(request.url).searchParams;
   const digest = params.get('digest')?.trim() || null;
   const cursor = params.get('cursor');
-  const currencyParam = params.get('currency') ?? 'INR';
-  if (!isCurrencyCode(currencyParam)) return jsonError('VALIDATION_ERROR', 'Currency must be INR or USD.', 400);
+  const currencyParam = params.get('currency') ?? 'USD';
+  if (!isCurrencyCode(currencyParam)) return jsonError('VALIDATION_ERROR', 'Choose a supported currency.', 400);
   const currency: CurrencyCode = currencyParam;
   if (digest && !SUI_DIGEST_PATTERN.test(digest)) return jsonError('VALIDATION_ERROR', 'That does not look like a Sui transaction digest.', 400);
   if (cursor && !CURSOR_PATTERN.test(cursor)) return jsonError('VALIDATION_ERROR', 'Invalid cursor.', 400);

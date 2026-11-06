@@ -1,5 +1,6 @@
 'use client';
 
+import { Tooltip } from './tooltip';
 import * as React from 'react';
 import { CheckCircle, InfoCircle, WarningCircle, WarningTriangle, Xmark } from 'iconoir-react';
 import { cn } from '@/lib/utils';
@@ -69,9 +70,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                   {item.action.label}
                 </button>
               )}
-              <button type="button" onClick={() => dismiss(item.id)} aria-label="Dismiss notification" className="hit shrink-0 rounded-full p-0.5 text-[var(--ink-muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--ink-primary)] cursor-pointer">
+              <Tooltip label="Dismiss"><button type="button" onClick={() => dismiss(item.id)} aria-label="Dismiss notification" className="hit shrink-0 rounded-full p-0.5 text-[var(--ink-muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--ink-primary)] cursor-pointer">
                 <Xmark className="h-3.5 w-3.5" />
-              </button>
+              </button></Tooltip>
             </div>
           );
         })}

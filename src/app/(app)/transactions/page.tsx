@@ -2,9 +2,11 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useAppSession } from '@/components/auth/app-session-guard';
 import { TxRow } from '@/components/transactions/tx-row';
 import { ListSkeleton } from '@/components/ui/skeleton';
+import { Tooltip } from '@/components/ui/tooltip';
 import { FreshnessNote, LoadErrorPanel } from '@/components/ui/status-panels';
 import { useFinanceResource } from '@/lib/use-finance-resource';
 import { Card } from '@/components/ui/card';
@@ -98,7 +100,7 @@ export default function TransactionsPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               leftAddon={<Search className="w-4 h-4 text-[var(--ink-muted)]" />}
-              rightAddon={searchQuery ? <button type="button" onClick={() => setSearchQuery('')} aria-label="Clear search" className="p-1 hover:text-[var(--ink-primary)] cursor-pointer"><Xmark className="w-3.5 h-3.5" /></button> : null}
+              rightAddon={searchQuery ? <Tooltip label="Clear search"><button type="button" onClick={() => setSearchQuery('')} aria-label="Clear search" className="p-1 hover:text-[var(--ink-primary)] cursor-pointer"><Xmark className="w-3.5 h-3.5" /></button></Tooltip> : null}
             />
           </div>
           <div className="sm:w-48">
@@ -106,7 +108,7 @@ export default function TransactionsPage() {
           </div>
           <div role="group" aria-label="Transaction type" className="flex self-start lg:self-auto p-1 bg-[var(--surface-sunken)] rounded-full border border-[var(--brand-blue-soft)]/60 text-xs">
             {(['all', 'expense', 'income'] as const).map((type) => (
-              <button key={type} type="button" onClick={() => setSelectedType(type)} aria-pressed={selectedType === type} className={`inline-flex items-center gap-1 px-4 py-1.5 rounded-full font-bold capitalize transition-colors cursor-pointer ${selectedType === type ? 'bg-[var(--brand-blue)] text-white' : 'text-[var(--ink-muted)] hover:text-[var(--ink-primary)]'}`}>{selectedType === type && <Check aria-hidden className="h-3 w-3" />}{type}</button>
+              <button key={type} type="button" onClick={() => setSelectedType(type)} aria-pressed={selectedType === type} className={`relative inline-flex items-center gap-1 px-4 py-1.5 rounded-full font-bold capitalize transition-colors cursor-pointer ${selectedType === type ? 'text-white' : 'text-[var(--ink-muted)] hover:text-[var(--ink-primary)]'}`}>{selectedType === type && <motion.span layoutId="tx-type-pill" transition={{ type: 'spring', stiffness: 500, damping: 38 }} className="absolute inset-0 rounded-full bg-[var(--brand-blue)] motion-reduce:transition-none" />}<span className="relative inline-flex items-center gap-1">{selectedType === type && <Check aria-hidden className="h-3 w-3" />}{type}</span></button>
             ))}
           </div>
         </div>
@@ -139,6 +141,7 @@ export default function TransactionsPage() {
                 : <EmptyState className="mt-3" icon={<Page className="h-6 w-6" />} title="No transactions yet" description="Add your income and spending. Your totals and the Assistant work from these entries." actionLabel="Add your first transaction" onAction={openAddTransaction} />
             ) : (
               <ul aria-label="Transactions" className="divide-y divide-[var(--border-subtle)]">
+<AnimatePresence initial={false}>
                 {filtered.map((tx) => {
                   const name = tx.description || tx.category;
                   return (
@@ -155,6 +158,7 @@ export default function TransactionsPage() {
                     />
                   );
                 })}
+</AnimatePresence>
               </ul>
             )}
       </Card>

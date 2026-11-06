@@ -29,7 +29,7 @@ export interface AffordabilityVerdict {
 
 export function calculateCashFlowSummary(
   transactions: ReadonlyArray<TransactionRecord>,
-  currency: CurrencyCode = 'INR'
+  currency: CurrencyCode = 'USD'
 ): {
   inflow: Money;
   outflow: Money;

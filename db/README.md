@@ -1,6 +1,6 @@
 # Provider-neutral PostgreSQL
 
-Memeora's only database. `migrations/` holds the full schema, applied in order (0001 → 0005, listed below).
+Memeora's only database. `migrations/` holds the full schema, applied in order (0001 → 0010, listed below).
 
 ## Migrations
 

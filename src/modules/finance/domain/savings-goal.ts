@@ -41,8 +41,8 @@ export class SavingsGoal {
     this.id = props.id;
     this.userId = props.userId;
     this.name = props.name.trim();
-    this.targetAmount = Money.fromMinorUnits(props.targetAmountMinor, props.currency || 'INR');
-    this.currentAmount = Money.fromMinorUnits(current, props.currency || 'INR');
+    this.targetAmount = Money.fromMinorUnits(props.targetAmountMinor, props.currency || 'USD');
+    this.currentAmount = Money.fromMinorUnits(current, props.currency || 'USD');
     this.targetDate = props.targetDate;
     this.status = props.status || 'active';
     this.createdAt = props.createdAt || new Date();

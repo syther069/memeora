@@ -17,7 +17,7 @@ function goal(overrides: Partial<Parameters<typeof SavingsGoal.create>[0]> = {})
     name: 'Goa trip',
     targetAmountMinor: 1500000,
     currentAmountMinor: 0,
-    currency: 'INR',
+    currency: 'USD',
     targetDate: '2027-12-01',
     ...overrides,
   });
@@ -43,8 +43,8 @@ describe('Savings goal rules', () => {
   });
 
   it('blocks currency changes after saving and contributions to inactive goals', () => {
-    expect(() => updateGoal(goal({ currentAmountMinor: 100 }), { currency: 'USD' })).toThrow(GoalRuleError);
-    expect(updateGoal(goal(), { currency: 'USD' }).targetAmount.currency).toBe('USD');
+    expect(() => updateGoal(goal({ currentAmountMinor: 100 }), { currency: 'USDC' })).toThrow(GoalRuleError);
+    expect(updateGoal(goal(), { currency: 'USDC' }).targetAmount.currency).toBe('USDC');
     expect(() => contributeToGoal(setGoalStatus(goal(), 'paused'), 100)).toThrow(GoalRuleError);
     expect(() => setGoalStatus(contributeToGoal(goal({ targetAmountMinor: 100 }), 100), 'paused')).toThrow(GoalRuleError);
   });

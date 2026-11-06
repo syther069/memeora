@@ -7,8 +7,8 @@ describe('UI Utilities', () => {
   });
 
   it('formats minor currency units in Indian Rupees correctly', () => {
-    // 245000 paise = ₹2,450.00
-    const formatted = formatCurrency(245000, 'INR');
+    // 245000 paise = $2,450.00
+    const formatted = formatCurrency(245000, 'USD');
     expect(formatted).toContain('2,450.00');
   });
 

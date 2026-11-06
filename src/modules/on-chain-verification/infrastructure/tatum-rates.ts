@@ -31,8 +31,8 @@ export class TatumRates {
   async rateFor(coinType: string, currency: CurrencyCode): Promise<string | null> {
     const coin = PRICED_COINS[coinType];
     if (!coin) return null;
-    if (coin.usdPegged && currency === 'USD') return '1';
-    if (!this.apiKey) return null;
+    if (coin.symbol === currency || (coin.usdPegged && currency === 'USD')) return '1';
+    if (currency === 'OTHER' || !this.apiKey) return null;
 
     const key = `${coin.symbol}:${currency}`;
     const cached = cache.get(key);

@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { Card, CardFooter } from '@/components/ui/card';
+import { Expand } from '@/components/ui/expand';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
@@ -163,13 +164,12 @@ export default function VerificationPage() {
         <div><h3 className="text-sm font-bold tracking-tight text-[var(--ink-primary)]">Technical details</h3><p className="text-xs text-[var(--ink-muted)]">The raw responses from both checks.</p></div>
         <div className="flex items-center gap-2"><Button variant="outline" size="sm" onClick={handleCopyPayload} leftIcon={<Copy className="h-3.5 w-3.5" />}>Copy JSON</Button><a href="https://docs.tatum.io/changelog/sui-grpc-available-tatum" target="_blank" rel="noopener noreferrer" className="inline-flex"><Button variant="outline" size="sm" rightIcon={<OpenNewWindow className="h-3.5 w-3.5" />}>Tatum gRPC docs</Button></a></div>
       </div>
-      <details className="group">
-      <summary className="cursor-pointer text-xs font-bold text-[var(--brand-blue)]">Show raw responses</summary>
+      <Expand label="Show raw responses" summaryClassName="text-xs font-bold">
       <Card className="mt-3 p-0 sm:p-0">
         <div className="flex items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--surface-tint)] p-3.5 px-5"><code className="text-xs font-mono font-bold text-[var(--brand-blue)]">sui-mainnet-grpc.gateway.tatum.io:443</code><Badge variant="sky" className="text-[10px] font-mono">Sui gRPC</Badge></div>
         <pre className="max-h-[32rem] overflow-auto bg-[var(--ink-primary)] p-5 font-mono text-xs leading-relaxed text-[var(--ink-inverse)]">{JSON.stringify(results, null, 2)}</pre>
       </Card>
-      </details>
+      </Expand>
     </div>
   );
 }

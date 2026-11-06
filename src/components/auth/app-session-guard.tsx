@@ -1,5 +1,6 @@
 'use client';
 
+import { isCurrencyCode } from '@/modules/finance/domain/money';
 import * as React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Spinner } from '@/components/ui/spinner';
@@ -24,7 +25,7 @@ interface AppSession {
 const AppSessionContext = React.createContext<AppSession>({
   walletAddress: null,
   isGuest: false,
-  preferredCurrency: 'INR',
+  preferredCurrency: 'USD',
   mode: 'personal',
   setMode: () => undefined,
   markOnboardingSettled: () => undefined,
@@ -46,7 +47,7 @@ export function AppSessionGuard({ children }: { children: React.ReactNode }) {
   const [state, setState] = React.useState<SessionState>('checking');
   const [onboardingRequired, setOnboardingRequired] = React.useState(false);
   const [walletAddress, setWalletAddress] = React.useState<string | null>(null);
-  const [preferredCurrency, setPreferredCurrency] = React.useState<CurrencyCode>('INR');
+  const [preferredCurrency, setPreferredCurrency] = React.useState<CurrencyCode>('USD');
   const [mode, setModeState] = React.useState<AppMode>('personal');
   const [retry, setRetry] = React.useState(0);
   const firstPath = React.useRef(pathname);
@@ -75,7 +76,7 @@ export function AppSessionGuard({ children }: { children: React.ReactNode }) {
         if (!onboardingResponse.ok || onboarding?.success !== true) throw new Error('Onboarding check failed');
         if (!active) return;
         setWalletAddress(result.data.walletAddress);
-        setPreferredCurrency(onboarding.data.profile?.preferred_currency === 'USD' ? 'USD' : 'INR');
+        setPreferredCurrency(isCurrencyCode(onboarding.data.profile?.preferred_currency) ? onboarding.data.profile.preferred_currency : 'USD');
         const savedMode = onboarding.data.profile?.active_mode;
         if (isAppMode(savedMode)) {
           setFinanceApiMode(savedMode);

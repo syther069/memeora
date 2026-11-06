@@ -1,10 +1,11 @@
 'use client';
 
 import * as React from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCurrentAccount, useDAppKit, useWallets } from '@mysten/dapp-kit-react';
 import { ArrowRight, Check, ShieldCheck, Wallet } from 'iconoir-react';
+import { AnimatedLink } from '@/components/ui/animated-link';
+import { IntegrationLogo } from '@/components/brand/integration-logo';
 import { BrandMark } from '@/components/layout/brand-mark';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -105,8 +106,8 @@ export default function SignInPage() {
           <p className="text-5xl font-bold leading-[1.05] tracking-tight xl:text-6xl">A finance assistant that remembers.</p>
           <dl className="mt-10 grid grid-cols-3 gap-6 border-t border-white/25 pt-6 text-sm">
             <div><dt className="font-semibold">Exact sums</dt><dd className="mt-1 text-xs leading-relaxed text-[var(--ink-on-blue-muted)]">From your ledger, never from AI.</dd></div>
-            <div><dt className="font-semibold">Your rules</dt><dd className="mt-1 text-xs leading-relaxed text-[var(--ink-on-blue-muted)]">Kept on Walrus, in an account your wallet owns.</dd></div>
-            <div><dt className="font-semibold">Proof</dt><dd className="mt-1 text-xs leading-relaxed text-[var(--ink-on-blue-muted)]">Check every memory on Sui, through Tatum.</dd></div>
+            <div><dt className="flex items-center gap-2 font-semibold"><IntegrationLogo name="walrus" size={18} decorative />Your rules</dt><dd className="mt-1 text-xs leading-relaxed text-[var(--ink-on-blue-muted)]">Kept on Walrus, in an account your wallet owns.</dd></div>
+            <div><dt className="flex items-center gap-2 font-semibold"><IntegrationLogo name="sui" size={18} decorative />Proof</dt><dd className="mt-1 text-xs leading-relaxed text-[var(--ink-on-blue-muted)]">Check every memory on Sui, through Tatum.</dd></div>
           </dl>
         </div>
         <p className="text-xs text-[var(--ink-on-blue-muted)]">Personal and Business workspaces, kept apart.</p>
@@ -166,7 +167,7 @@ export default function SignInPage() {
 
           {error && <p role="alert" className="mt-3 rounded-[var(--radius-sm)] border border-[var(--accent-danger-border)] bg-[var(--accent-danger-bg)] p-3 text-sm text-[var(--accent-danger)]">{error}</p>}
           <div className="mt-6 flex items-start gap-2.5 border-t border-[var(--border-subtle)] pt-4 text-xs leading-relaxed text-[var(--ink-muted)]"><ShieldCheck aria-hidden className="mt-0.5 h-4 w-4 shrink-0 text-[var(--brand-blue)]" /><p>Memeora never asks for your recovery phrase or private key. Each wallet has its own private workspace.</p></div>
-          <Link href="/dashboard" className="hit mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[var(--brand-blue)] hover:underline">Look around without a wallet<ArrowRight aria-hidden className="h-3.5 w-3.5" /></Link>
+          <AnimatedLink href="/dashboard" className="hit mt-4 gap-1 text-sm font-semibold text-[var(--brand-blue)]">Look around without a wallet<ArrowRight aria-hidden className="h-3.5 w-3.5" /></AnimatedLink>
         </section>
       </main>
     </div>

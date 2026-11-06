@@ -15,11 +15,11 @@ describe('periodBounds', () => {
 
 describe('toPeriodTotals', () => {
   it('converts database sums and computes net in integer minor units', () => {
-    expect(toPeriodTotals({ currency: 'INR', incomeMinor: '500000', expenseMinor: '620050', transactionCount: '3' }))
-      .toEqual({ currency: 'INR', incomeMinor: 500000, expenseMinor: 620050, netMinor: -120050, transactionCount: 3 });
+    expect(toPeriodTotals({ currency: 'USD', incomeMinor: '500000', expenseMinor: '620050', transactionCount: '3' }))
+      .toEqual({ currency: 'USD', incomeMinor: 500000, expenseMinor: 620050, netMinor: -120050, transactionCount: 3 });
   });
 
   it('refuses a sum beyond the safe integer range rather than rounding it', () => {
-    expect(() => toPeriodTotals({ currency: 'INR', incomeMinor: '9007199254740993', expenseMinor: '0', transactionCount: '1' })).toThrow();
+    expect(() => toPeriodTotals({ currency: 'USD', incomeMinor: '9007199254740993', expenseMinor: '0', transactionCount: '1' })).toThrow();
   });
 });

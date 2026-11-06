@@ -23,12 +23,12 @@ function shortField(value: unknown): string | null | undefined {
 export function parseTransactionInput(input: Record<string, unknown>):
   | { ok: true; value: TransactionInput }
   | { ok: false; message: string } {
-  const { type, amountMinor, currency = 'INR', category, description = '', occurredAt } = input;
+  const { type, amountMinor, currency = 'USD', category, description = '', occurredAt } = input;
   if (type !== 'income' && type !== 'expense') return { ok: false, message: 'Type must be income or expense.' };
   if (typeof amountMinor !== 'number' || !Number.isSafeInteger(amountMinor) || amountMinor <= 0) {
     return { ok: false, message: 'amountMinor must be a positive safe integer.' };
   }
-  if (!isCurrencyCode(currency)) return { ok: false, message: 'Currency must be INR or USD.' };
+  if (!isCurrencyCode(currency)) return { ok: false, message: 'Choose a supported currency.' };
   if (typeof category !== 'string' || !category.trim() || category.trim().length > 50) {
     return { ok: false, message: 'Category must be between 1 and 50 characters.' };
   }

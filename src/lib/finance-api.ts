@@ -1,3 +1,4 @@
+import { formatMinorUnits, type CurrencyCode } from '@/modules/finance/domain/money';
 import { APP_MODE_HEADER, type AppMode } from '@/lib/app-mode';
 import { localPeriod } from '@/lib/dates';
 
@@ -20,7 +21,7 @@ export interface ApiTransaction {
   id: string;
   type: 'income' | 'expense';
   amountMinor: number;
-  currency: 'INR' | 'USD';
+  currency: CurrencyCode;
   category: string;
   description: string;
   occurredAt: string;
@@ -43,7 +44,7 @@ export interface ApiBudget {
   id: string;
   period: string;
   amountMinor: number;
-  currency: 'INR' | 'USD';
+  currency: CurrencyCode;
   createdAt: string;
   updatedAt: string;
 }
@@ -53,7 +54,7 @@ export interface ApiSavingsGoal {
   name: string;
   targetAmountMinor: number;
   currentAmountMinor: number;
-  currency: 'INR' | 'USD';
+  currency: CurrencyCode;
   targetDate: string | null;
   status: 'active' | 'completed' | 'paused';
   progressPercent: number;
@@ -63,7 +64,7 @@ export interface ApiSavingsGoal {
 
 /** Exact totals for one currency in a period, summed by the server. */
 export interface ApiPeriodTotals {
-  currency: 'INR' | 'USD';
+  currency: CurrencyCode;
   incomeMinor: number;
   expenseMinor: number;
   netMinor: number;
@@ -139,10 +140,5 @@ export function currentPeriod(): string {
 }
 
 export function formatMoney(amountMinor: number, currency: ApiTransaction['currency']): string {
-  return new Intl.NumberFormat(currency === 'INR' ? 'en-IN' : 'en-US', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amountMinor / 100);
+  return formatMinorUnits(amountMinor, currency);
 }

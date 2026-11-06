@@ -8,13 +8,13 @@ describe('MemoryRecord Domain Entity', () => {
       id: 'mem_1',
       userId: 'user_123',
       category: 'goal',
-      text: 'Prioritize saving ₹3,000 each month for liquid emergency reserves',
+      text: 'Prioritize saving $3,000 each month for liquid emergency reserves',
     });
 
     expect(record.id).toBe('mem_1');
     expect(record.userId).toBe('user_123');
     expect(record.category).toBe('goal');
-    expect(record.text).toBe('Prioritize saving ₹3,000 each month for liquid emergency reserves');
+    expect(record.text).toBe('Prioritize saving $3,000 each month for liquid emergency reserves');
     expect(record.status).toBe('pending');
     expect(record.walrusBlobId).toBeNull();
     expect(record.isConfirmed()).toBe(false);
@@ -91,7 +91,7 @@ function fakeSdk(overrides: Record<string, unknown> = {}) {
 describe('WalrusClient (MemWal SDK adapter)', () => {
   it('queues the write without calling Walrus when credentials are not configured', async () => {
     const client = new WalrusClient({ key: '', accountId: '' });
-    const result = await client.writeMemory({ namespaceOwner: WALLET, category: 'goal', text: 'Emergency fund of ₹25,000', idempotencyKey: 'mem-1' });
+    const result = await client.writeMemory({ namespaceOwner: WALLET, category: 'goal', text: 'Emergency fund of $25,000', idempotencyKey: 'mem-1' });
 
     expect(result).toMatchObject({ status: 'pending_retry', jobId: null, namespace: `memeora:${WALLET}` });
     expect(result.warning).toContain('queued locally');
@@ -99,10 +99,10 @@ describe('WalrusClient (MemWal SDK adapter)', () => {
 
   it('submits a background remember job in the wallet namespace with an idempotency key', async () => {
     const { sdk, client, createClient } = fakeSdk();
-    const result = await client.writeMemory({ namespaceOwner: WALLET, category: 'goal', text: 'Emergency fund of ₹25,000', idempotencyKey: 'mem-1' });
+    const result = await client.writeMemory({ namespaceOwner: WALLET, category: 'goal', text: 'Emergency fund of $25,000', idempotencyKey: 'mem-1' });
 
     expect(result).toEqual({ status: 'pending', jobId: 'job_1', namespace: `memeora:${WALLET}` });
-    expect(sdk.remember).toHaveBeenCalledWith('Memeora category: goal. Emergency fund of ₹25,000', `memeora:${WALLET}`, { idempotencyKey: 'mem-1', dedupe: true });
+    expect(sdk.remember).toHaveBeenCalledWith('Memeora category: goal. Emergency fund of $25,000', `memeora:${WALLET}`, { idempotencyKey: 'mem-1', dedupe: true });
     expect(createClient).toHaveBeenCalledWith(expect.objectContaining({ serverUrl: 'https://relayer.memory.walrus.xyz', namespace: 'memeora' }));
     expect(sdk.destroy).toHaveBeenCalled();
   });
@@ -129,7 +129,7 @@ describe('WalrusClient (MemWal SDK adapter)', () => {
 
   it('queues a write the relayer did not accept, so it can be retried', async () => {
     const { client } = fakeSdk({ remember: vi.fn().mockRejectedValue(new Error('request timeout')) });
-    const result = await client.writeMemory({ namespaceOwner: WALLET, category: 'goal', text: 'Emergency fund of ₹25,000', idempotencyKey: 'mem-1' });
+    const result = await client.writeMemory({ namespaceOwner: WALLET, category: 'goal', text: 'Emergency fund of $25,000', idempotencyKey: 'mem-1' });
 
     expect(result.status).toBe('pending_retry');
     expect(result.jobId).toBeNull();
@@ -156,7 +156,7 @@ describe('WalrusClient (MemWal SDK adapter)', () => {
   it('recalls semantically from the wallet namespace and parses categories', async () => {
     const recall = vi.fn().mockResolvedValue({
       results: [
-        { blob_id: 'blob_pref', text: 'Memeora category: preference. Keep dining out under ₹3,500 per month', distance: 0.12, created_at: '2026-11-01T00:00:00.000Z' },
+        { blob_id: 'blob_pref', text: 'Memeora category: preference. Keep dining out under $3,500 per month', distance: 0.12, created_at: '2026-11-01T00:00:00.000Z' },
         { blob_id: 'blob_other', text: 'Written by another client', distance: 0.4 },
       ],
       total: 2,
@@ -168,7 +168,7 @@ describe('WalrusClient (MemWal SDK adapter)', () => {
     expect(result).toEqual({
       available: true,
       memories: [
-        { blobId: 'blob_pref', category: 'preference', text: 'Keep dining out under ₹3,500 per month', distance: 0.12, createdAt: new Date('2026-11-01T00:00:00.000Z') },
+        { blobId: 'blob_pref', category: 'preference', text: 'Keep dining out under $3,500 per month', distance: 0.12, createdAt: new Date('2026-11-01T00:00:00.000Z') },
         { blobId: 'blob_other', category: 'preference', text: 'Written by another client', distance: 0.4, createdAt: null },
       ],
     });
