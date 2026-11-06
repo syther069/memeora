@@ -1954,3 +1954,9 @@ Nothing committed.
 ## 2026-11-06 — Onboarding page removed
 
 - At the user's request. New wallets go straight to the overview with the profile made at sign-in: USD, Personal, memory off (column default FALSE). Consent is given and recorded with the toggle on the Memory page. `/api/onboarding` stays: the guard reads the profile from its GET.
+
+## 2026-11-06 — README rewritten
+
+- Fresh clone from GitHub with `.env.example` copied: `npm ci` exit 0; `npm run lint` exit 0; `npm test` exit 0; `npm run build` exit 0. `npm run typecheck` exit 2 before `next-env.d.ts` exists, exit 0 after `npx next typegen`. Dev server with placeholder values: `/`, `/docs`, `/dashboard`, `/api/auth/session` all 200.
+- Read only count on Sui through Tatum: agent `21e97dd5…121c` has 25 certified memories; 24 listed by the relayer returned 200 from the aggregator.
+- Migration commands in the README were not run against a real PostgreSQL server here (no `psql`).
