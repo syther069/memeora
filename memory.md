@@ -1917,3 +1917,13 @@ Nothing committed.
 
 ### Next actions
 - Deploy: live code still allows INR until this is deployed, though the migration is already applied.
+
+## 2026-11-06 — Pushed and deployed; history rewritten to syther069
+
+**Status:** VERIFIED on GitHub and Vercel. This entry itself is not yet committed.
+
+- At the user's request, all 5 commits were rewritten to author and committer syther069 with the GitHub noreply email, Co-Authored-By lines removed, and `main` force-pushed with a lease. New head `2f1b09a`, same tree as the old head `86ef4c5`. Local branch `backup-before-author-rewrite` keeps the old history and was not pushed.
+- GitHub API: all commits link to syther069, and the only contributor is syther069.
+- Vercel deployment `dpl_Gj2rKYCH72dRdL4215xGrpDzgroy` READY, source git, aliased to memora-mu-kohl.vercel.app. Live `/`, `/dashboard`, `/sign-in` return 200, `/api/transactions` returns 401 without a session, and the landing HTML has the FAQ heading and no rupee sign.
+- Not tested live: wallet sign-in and signed-in pages.
+- Repo-local git identity is now syther069. The global git identity is unchanged.
