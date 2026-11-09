@@ -19,6 +19,8 @@ import {
 } from '../../../modules/finance/domain/savings-goal';
 
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function isValidPeriod(value: unknown): value is string {
   return typeof value === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
 }
@@ -213,7 +215,7 @@ async function walletPost(request: NextRequest) {
     }
 
     if (input.action === 'delete-goal' || input.action === 'update-goal' || input.action === 'set-goal-status' || input.action === 'contribute-goal') {
-      if (typeof input.goalId !== 'string' || !input.goalId.trim()) return jsonError('VALIDATION_ERROR', 'goalId is required.', 400);
+      if (typeof input.goalId !== 'string' || !UUID_PATTERN.test(input.goalId)) return jsonError('VALIDATION_ERROR', 'goalId must be a UUID.', 400);
       // Adding money is the one goal action a repeat would change.
       const scope = 'budgets:contribute-goal';
       const contributeKey = input.action === 'contribute-goal' ? idempotencyKey : undefined;

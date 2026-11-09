@@ -26,14 +26,8 @@ export async function POST(request: NextRequest) {
     try {
       await client.query('BEGIN');
       await client.query('DELETE FROM wallet_challenges WHERE expires_at <= NOW() OR consumed_at IS NOT NULL');
-      const attempts = await client.query<{ count: string }>(
-        `SELECT count(*)::text AS count FROM wallet_challenges
-         WHERE wallet_address = $1 AND created_at > NOW() - INTERVAL '1 hour'`, [address],
-      );
-      if (Number(attempts.rows[0]?.count ?? 0) >= 10) {
-        await client.query('ROLLBACK');
-        return jsonError('RATE_LIMITED', 'Too many sign-in attempts. Try again later.', 429);
-      }
+      // No per-address limit: anyone can request a challenge for any address, so it
+      // would let a stranger lock a wallet out. The Vercel firewall limits each IP instead.
       const inserted = await client.query<{ id: string; created_at: Date; expires_at: Date }>(
         `INSERT INTO wallet_challenges(wallet_address, nonce_hash, purpose, expires_at)
          VALUES ($1, $2, 'wallet_login', NOW() + INTERVAL '5 minutes')

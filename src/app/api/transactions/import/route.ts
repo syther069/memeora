@@ -3,7 +3,7 @@ import { jsonError, jsonSuccess } from '@/lib/api-response';
 import { INVALID_MODE_MESSAGE, readAppMode } from '@/lib/app-mode';
 import { requireWalletSession } from '@/lib/auth/require-session';
 import { withWalletTransaction } from '@/lib/postgres/wallet-transaction';
-import { isCurrencyCode, type CurrencyCode } from '@/modules/finance/domain/money';
+import { isCurrencyCode, MAX_AMOUNT_MINOR, type CurrencyCode } from '@/modules/finance/domain/money';
 import { formatTokenAmount, SUI_DIGEST_PATTERN } from '@/modules/on-chain-verification/domain/sui-wallet-activity';
 import { SuiWalletHistory } from '@/modules/on-chain-verification/infrastructure/sui-wallet-history';
 
@@ -32,7 +32,7 @@ function parseItem(value: unknown): ImportItem | null {
   if (typeof item.digest !== 'string' || !SUI_DIGEST_PATTERN.test(item.digest)) return null;
   if (typeof item.coinType !== 'string' || !item.coinType || item.coinType.length > 255) return null;
   if (typeof item.category !== 'string' || !item.category.trim() || item.category.trim().length > 50) return null;
-  if (typeof item.amountMinor !== 'number' || !Number.isSafeInteger(item.amountMinor) || item.amountMinor <= 0) return null;
+  if (typeof item.amountMinor !== 'number' || !Number.isSafeInteger(item.amountMinor) || item.amountMinor <= 0 || item.amountMinor > MAX_AMOUNT_MINOR) return null;
   if (!isCurrencyCode(item.currency)) return null;
   if (item.description !== undefined && (typeof item.description !== 'string' || item.description.length > 500)) return null;
   return {

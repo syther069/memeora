@@ -62,6 +62,9 @@ export class Money {
 }
 
 
+/** Largest single amount accepted: 10 billion in minor units, so period sums stay exact. */
+export const MAX_AMOUNT_MINOR = 1_000_000_000_000;
+
 export const SUPPORTED_CURRENCIES: readonly CurrencyCode[] = ['USD', 'USDC', 'USDT', 'SUI', 'WAL', 'OTHER'];
 
 export const CURRENCY_LABELS: Readonly<Record<CurrencyCode, string>> = { USD: 'USD $', USDC: 'USDC', USDT: 'USDT', SUI: 'SUI', WAL: 'WAL', OTHER: 'Other' };

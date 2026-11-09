@@ -1,4 +1,4 @@
-import { CurrencyCode, isCurrencyCode } from '../domain/money';
+import { CurrencyCode, isCurrencyCode, MAX_AMOUNT_MINOR } from '../domain/money';
 import { TransactionType } from '../domain/transaction';
 
 export interface TransactionInput {
@@ -25,8 +25,8 @@ export function parseTransactionInput(input: Record<string, unknown>):
   | { ok: false; message: string } {
   const { type, amountMinor, currency = 'USD', category, description = '', occurredAt } = input;
   if (type !== 'income' && type !== 'expense') return { ok: false, message: 'Type must be income or expense.' };
-  if (typeof amountMinor !== 'number' || !Number.isSafeInteger(amountMinor) || amountMinor <= 0) {
-    return { ok: false, message: 'amountMinor must be a positive safe integer.' };
+  if (typeof amountMinor !== 'number' || !Number.isSafeInteger(amountMinor) || amountMinor <= 0 || amountMinor > MAX_AMOUNT_MINOR) {
+    return { ok: false, message: 'amountMinor must be a positive whole number of minor units, at most 10 billion.' };
   }
   if (!isCurrencyCode(currency)) return { ok: false, message: 'Choose a supported currency.' };
   if (typeof category !== 'string' || !category.trim() || category.trim().length > 50) {

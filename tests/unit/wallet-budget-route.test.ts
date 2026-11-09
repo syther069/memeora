@@ -18,7 +18,7 @@ import { POST } from '@/app/api/budgets/route';
 const walletAddress = `0x${'a'.repeat(64)}`;
 const userId = '10000000-0000-4000-8000-000000000001';
 const existingGoal = {
-  id: 'goal-1', user_id: userId, name: 'Emergency fund', target_amount_minor: '1000000',
+  id: '11111111-2222-4333-8444-555555555555', user_id: userId, name: 'Emergency fund', target_amount_minor: '1000000',
   current_amount_minor: '200000', currency: 'USD', target_date: null, status: 'active',
   created_at: new Date('2026-01-01T00:00:00Z'), updated_at: new Date('2026-01-01T00:00:00Z'),
 };
@@ -52,13 +52,19 @@ describe('wallet-authenticated savings goal API', () => {
 
   it('edits only a goal selected for the verified account', async () => {
     mocks.query.mockResolvedValueOnce({ rows: [existingGoal] }).mockResolvedValueOnce({ rows: [] });
-    const response = await POST(request({ action: 'update-goal', goalId: 'goal-1', name: 'Rainy day fund', targetAmountMinor: 1_200_000 }));
+    const response = await POST(request({ action: 'update-goal', goalId: '11111111-2222-4333-8444-555555555555', name: 'Rainy day fund', targetAmountMinor: 1_200_000 }));
     const body = await response.json();
 
     expect(response.status).toBe(200);
     expect(body.data.savingsGoal.name).toBe('Rainy day fund');
     expect(mocks.query.mock.calls[0]?.[0]).toContain('WHERE id = $1 AND user_id = $2 FOR UPDATE');
-    expect(mocks.query.mock.calls[0]?.[1]).toEqual(['goal-1', userId]);
+    expect(mocks.query.mock.calls[0]?.[1]).toEqual(['11111111-2222-4333-8444-555555555555', userId]);
     expect(mocks.query.mock.calls[1]?.[0]).toContain('UPDATE savings_goals');
+  });
+
+  it('rejects a goal ID that is not a UUID before touching the database', async () => {
+    const response = await POST(request({ action: 'delete-goal', goalId: 'abc' }));
+    expect(response.status).toBe(400);
+    expect(mocks.withWalletTransaction).not.toHaveBeenCalled();
   });
 });
